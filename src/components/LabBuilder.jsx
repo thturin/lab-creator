@@ -1,6 +1,7 @@
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import {createQuestion} from "../models/question";
 
 function QuestionEditor({ q, onChange }) {
     //onChange passed down from the parent so everything stays in sync
@@ -30,21 +31,32 @@ function QuestionEditor({ q, onChange }) {
         value={q.desc}
         onChange={(e) => {
             const value = e.target.value;
-            //find a. b. .... z. 
+            //FIND SUB QUESTIONS
             const subQuestions = value
             .split('\n')
-            .filter(line => /^[a-z]\./i.test(line.trim()))
-            .map(line => line.trim());
+            .filter(line => /^[a-z]\./i.test(line.trim())) //find a. - z.
+            .map(line => ({...createQuestion(), prompt:line.trim()})); //return create a new question and update the prompt
+            //update the question and add subQuestions
             onChange({...q, desc:value, subQuestions});
         }}
       />
 
-        {q.subQuestions && q.subQuestions.length>0 && (
-        <ul className="ml-4 list-disc text-gray-700">
-            {q.subQuestions.map((sq,i)=>{
-                return <li key={i}>{sq}</li>
-            })}
-        </ul>
+        {q.subQuestions && q.subQuestions.length > 0 && (
+            <div className="ml-4 border-l-2 pl-2">
+                {q.subQuestions.map((sq, i) => (
+                    <QuestionEditor
+                        key={sq.id}
+                        q={sq}
+                        onChange={updatedSubQ => {
+                        // Update the sub-question in the parent
+                        const updatedSubs = q.subQuestions.map((sub, idx) =>
+                            idx === i ? updatedSubQ : sub
+                        );
+                        onChange({ ...q, subQuestions: updatedSubs });
+                        }}
+                    />
+                ))}
+            </div>
         )}
 
       <select
@@ -121,7 +133,7 @@ function LabBuilder(){
     const addQuestionBlock = () => {
         setBlocks([
         ...blocks,
-        { id: Date.now(), blockType: "question", type: "q_short",prompt: "", desc: "", subQuestions:[] }
+        createQuestion()
         ]);
     };
 
