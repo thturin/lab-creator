@@ -6,3 +6,10 @@ export const createQuestion = () => ({
   desc: "",
   subQuestions: []
 });
+
+export const createMaterial = () => ({
+  id: Date.now(),
+  blockType: "material",
+  type: "",
+  content: ""
+});

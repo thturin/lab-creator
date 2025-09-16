@@ -1,15 +1,19 @@
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import {createQuestion} from "../models/question";
+import {createQuestion, createMaterial} from "../models/block";
 
-function QuestionEditor({ q, onChange }) {
+
+
+function QuestionEditor({ q, onQuestionChange, onQuestionDelete}) {
     //onChange passed down from the parent so everything stays in sync
   const update = (field, value) => {
-    onChange({ ...q, [field]: value }); //field is the placeholder for any property
+    //ONCHANGE CREATES A NEW QUESTION OBJECT WITH UQPDATED FIELD  VALUE
+    onQuestionChange({ ...q, [field]: value }); //field is the placeholder for any property
     //properties of questionBlock blockType, type, prompt, desc
   };
 
+  //PROMPT TEXT BOX
   return (
     <div className="p-4 border rounded mb-4 bg-white shadow">
       <input
@@ -23,22 +27,13 @@ function QuestionEditor({ q, onChange }) {
             update("prompt", e.target.value);
         }}
       />
-
+  
       <textarea
         placeholder="Description"
         className="w-full border p-2 font-mono mb-2"
         rows="3"
         value={q.desc}
-        onChange={(e) => {
-            const value = e.target.value;
-            //FIND SUB QUESTIONS
-            const subQuestions = value
-            .split('\n')
-            .filter(line => /^[a-z]\./i.test(line.trim())) //find a. - z.
-            .map(line => ({...createQuestion(), prompt:line.trim()})); //return create a new question and update the prompt
-            //update the question and add subQuestions
-            onChange({...q, desc:value, subQuestions});
-        }}
+        onChange={(e) => update("desc",e.target.value)}
       />
 
         {q.subQuestions && q.subQuestions.length > 0 && (
@@ -47,13 +42,21 @@ function QuestionEditor({ q, onChange }) {
                     <QuestionEditor
                         key={sq.id}
                         q={sq}
-                        onChange={updatedSubQ => {
-                        // Update the sub-question in the parent
-                        const updatedSubs = q.subQuestions.map((sub, idx) =>
-                            idx === i ? updatedSubQ : sub
-                        );
-                        onChange({ ...q, subQuestions: updatedSubs });
+                        onQuestionChange={
+                            //pass the updated Sub Q from child to parent in
+                            //updatedSubQ
+                            updatedSubQ=>{ 
+                            const updatedSubs = q.subQuestions.map((sub,idx)=>
+                                idx === i ? updatedSubQ : sub
+                            );
+                             // Call parent's onQuestionChange to update the parent question
+                            onQuestionChange({...q, subQuestions:updatedSubs});
                         }}
+                        onQuestionDelete={()=>{
+                            //filter everything but the q to delete
+                            const updatedSubs = q.subQuestions.filter((_,idx)=>idx!==i);
+                            onQuestionChange({...q,subQuestions:updatedSubs});
+                        }}                        
                     />
                 ))}
             </div>
@@ -68,15 +71,37 @@ function QuestionEditor({ q, onChange }) {
         <option value="q_textarea">Paragraph</option>
         <option value="q_code">Code Response</option>
       </select>
+
+       <button
+            onClick={()=>{
+                const nextIndex = (q.subQuestions?.length || 0);
+                const nextLetter = String.fromCharCode(97+nextIndex); //97=a
+                const newSubQ = createQuestion();
+                newSubQ.prompt = `${nextLetter}.`;
+                const updatedSubs = [...(q.subQuestions || []),newSubQ];
+                onQuestionChange({...q,subQuestions: updatedSubs}); //send to parent updated  q's and subQuestions
+            }}
+            className="bg-green-600 text-white px-4 py-2 rounded"
+        >
+            Add Sub Question
+        </button>
+        <button
+            onClick={onQuestionDelete}
+            className="bg-red-600 text-white px-2 py-1 rounded ml-2"
+        >
+            Delete
+        </button>
+        
     </div>
   );
 }
 
-function TextImageEditor({block, onChange}){
+function MaterialEditor({block, onMaterialChange, onMaterialDelete}){
     const [image, setImage] = useState();
     const update = (field,value) =>{
         const type = image ? "img" : "text";
-        onChange({...block, [field]:value, type})
+        //ONCHANGE CREATES A NEW BLOCK OBJECT WITH UPDATED FIELD AND TYPE VALUES 
+        onMaterialChange({...block, [field]:value, type})
         //text image block properties blockType, type, content
     }
     return(
@@ -94,43 +119,82 @@ function TextImageEditor({block, onChange}){
                     if(e.key === "Enter" && !e.shiftKey){
                         e.preventDefault();
                         update("content", e.target.value);
+                        
                     }
                 }}
-                // onChange={e=> onChange({...block, content: e.target.value})}
                 onPaste={async (e)=>{
                     //find item from clipboard that is an image
                     const item = Array.from(e.clipboardData.items).find(i=>i.type.startsWith("image/"));
                     if(item){
                         const file = item.getAsFile(); //ge tthe image file
-                        const url = URL.createObjectURL(file);
-                        setImage(url);
-                        update("content",image);
+                        const reader = new FileReader();
+                        reader.onload = (ev)=>{ //executes once image file has been converted to base64 data URL
+                            const imgMarkdown = `![](${ev.target.result})`;
+                            console.log(`imgMarkdown ${imgMarkdown}`);
+                            const start = e.target.selectionStart;
+                            const end = e.target.selectionEnd;
+                            let newValue =
+                                block.content.substring(0, start) + imgMarkdown + block.content.substring(end);
+                
+                            update("content",imgMarkdown);
+                        }
+                        reader.readAsDataURL(file);
+                        // const url = URL.createObjectURL(file);
+                        // setImage(url);
+                        // update("content",image);
                         e.preventDefault();
                     }
                 }}
             />
-            {image && (
+            {/* {image && (
                 <div className="my-2">
                     <img src={image} alt="Pasted" style={{maxWidth: "100%"}} />
                     <div className="text-xs text-gray-500">Image preview (not saved in Markdown)</div>
                 </div>
-                )}
+                )} */}
+            <div className="mt-2 p-2 border bg-gray-50">
+                <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                        img:({node, ...props}) =>{
+                            console.log('look here',props);
+                            if(!props.src) return null;
+                            return <img {...props} alt={props.alt} style={{maxWidth:"100%"}} />;
+                        }
+                    }}
+                >
+                    {block.content}
+                </ReactMarkdown>
+            </div>
+       
+            <button
+            onClick={onMaterialDelete}
+            className="bg-red-600 text-white px-2 py-1 rounded ml-2"
+            >
+                Delete
+            </button>
         </div>
     )
 }
 
 function LabBuilder(){
     const [blocks, setBlocks] = useState([]); //directions, questions, etc
-    const [title, setTitle] = useState([]);
+    const [title, setTitle] = useState("");
 
-    const addTextImageBlock = () => { //type can be text, or image?
+    const deleteBlock = (id) =>{
+        setBlocks(blocks.filter(b=> b.id !== id)); //remove block with id
+    }
+
+    const addMaterialBlock = () => { //type can be text, or image?
         setBlocks([
-            ...blocks, {id: Date.now(), blockType: "material",type: "", content: ""}
+            ...blocks, 
+            createMaterial()
         ]);
     
     }
 
     const addQuestionBlock = () => {
+
         setBlocks([
         ...blocks,
         createQuestion()
@@ -150,11 +214,13 @@ function LabBuilder(){
 
     return (
         <div className="max-w-3xl mx-auto p-6">
-        <h1 className="text-2xl font-bold mb-4">{title}</h1>
-        <input 
+        <h1 className="text-2xl font-bold mb-4" style={{whiteSpace: "pre-line"}}>
+            {title}
+        </h1>
+        <textarea 
             type="text"
             className="w-full border p-3 text-xl font-semibold mb-6"
-            placdeholder="Enter lab title"
+            placeholder="Enter lab title"
             value={title}
             onChange={(e)=> setTitle(e.target.value)}
             onKeyDown={(e)=>{
@@ -165,27 +231,34 @@ function LabBuilder(){
             }}
         />
 
+    {/* DISPLAY BLOCKS */}
         {blocks.map((block) => (
             block.blockType === "material" ? 
             (
-                <TextImageEditor
+                <MaterialEditor
                 key={block.id}
                 block={block}
-                onChange={(updated) => updateBlock(block.id, updated)}
+                onMaterialChange={(updatedBlock) => updateBlock(block.id, updatedBlock)}
+                onMaterialDelete={()=>deleteBlock(block.id)}
                 />
             ) : ( //type is short, code or textarea
                 <QuestionEditor
-                key={block.id}
-                q={block}
-                onChange={(updated) => updateBlock(block.id, updated)}
+                    key={block.id}
+                    q={block}
+                    // YOU MUST ALWAYS PASS A FUNCTION AN EVENT HANDLER
+                    //updatedBlock is the new version of the block passed and updated from child
+                    onQuestionChange={(updatedBlock) => updateBlock(block.id, updatedBlock)}
+                    onQuestionDelete={()=>deleteBlock(block.id)}
                 />
             )
         ))}
+    
+    {/* BUTTONS */}
         <button 
-            onClick={addTextImageBlock}
+            onClick={addMaterialBlock}
             className="bg-green-600 text-white px-4 py-2 rounded mr-2"
         >
-            Add text/image 📷 
+            Add Materials
         </button>
         <button
             onClick={addQuestionBlock}
