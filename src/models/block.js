@@ -1,7 +1,7 @@
 export const createQuestion = () => ({
   id: Date.now(),
   blockType: "question",
-  type: "q_short", //defaults to q_short
+  type: "short", //defaults to short
   prompt: "",
   desc: "",
   subQuestions: []
@@ -10,6 +10,6 @@ export const createQuestion = () => ({
 export const createMaterial = () => ({
   id: Date.now(),
   blockType: "material",
-  type: "",
-  content: ""
+  content: "",
+  images: [] //array of base64 strings
 });

@@ -2,6 +2,7 @@ import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {createQuestion, createMaterial} from "../models/block";
+import { stringify } from "postcss";
 
 
 
@@ -67,9 +68,9 @@ function QuestionEditor({ q, onQuestionChange, onQuestionDelete}) {
         value={q.type}
         onChange={(e) => update("type", e.target.value)}
       >
-        <option value="q_short">Short Answer</option>
-        <option value="q_textarea">Paragraph</option>
-        <option value="q_code">Code Response</option>
+        <option value="short">Short Answer</option>
+        <option value="textarea">Paragraph</option>
+        <option value="code">Code Response</option>
       </select>
 
        <button
@@ -99,11 +100,17 @@ function QuestionEditor({ q, onQuestionChange, onQuestionDelete}) {
 function MaterialEditor({block, onMaterialChange, onMaterialDelete}){
     const [image, setImage] = useState();
     const update = (field,value) =>{
-        const type = image ? "img" : "text";
         //ONCHANGE CREATES A NEW BLOCK OBJECT WITH UPDATED FIELD AND TYPE VALUES 
-        onMaterialChange({...block, [field]:value, type})
+        onMaterialChange({...block, [field]:value})
         //text image block properties blockType, type, content
-    }
+    };
+
+    const addImage=(base64)=>{
+        onMaterialChange({
+            ...block,
+            images: [...(block.images||[]),base64]
+        })
+    };
     return(
         <div className="p-4 border rounded mb-4 bg-white shadow">
             <textarea
@@ -115,57 +122,36 @@ function MaterialEditor({block, onMaterialChange, onMaterialDelete}){
                     //console.log(e.target.value);
                     update("content",e.target.value);}
                 }
-                onKeyDown={e=>{
-                    if(e.key === "Enter" && !e.shiftKey){
-                        e.preventDefault();
-                        update("content", e.target.value);
-                        
-                    }
-                }}
+               
                 onPaste={async (e)=>{
                     //find item from clipboard that is an image
                     const item = Array.from(e.clipboardData.items).find(i=>i.type.startsWith("image/"));
                     if(item){
                         const file = item.getAsFile(); //ge tthe image file
                         const reader = new FileReader();
-                        reader.onload = (ev)=>{ //executes once image file has been converted to base64 data URL
-                            const imgMarkdown = `![](${ev.target.result})`;
-                            console.log(`imgMarkdown ${imgMarkdown}`);
-                            const start = e.target.selectionStart;
-                            const end = e.target.selectionEnd;
-                            let newValue =
-                                block.content.substring(0, start) + imgMarkdown + block.content.substring(end);
-                
-                            update("content",imgMarkdown);
+                        reader.onload =(ev)=>{ //executes once image file has been converted to base64 data URL
+                            addImage(ev.target.result);            
+                            //update("content",ev.target.result);
                         }
                         reader.readAsDataURL(file);
-                        // const url = URL.createObjectURL(file);
-                        // setImage(url);
-                        // update("content",image);
                         e.preventDefault();
                     }
                 }}
             />
-            {/* {image && (
-                <div className="my-2">
-                    <img src={image} alt="Pasted" style={{maxWidth: "100%"}} />
-                    <div className="text-xs text-gray-500">Image preview (not saved in Markdown)</div>
+            {/* Render images above Markdown preview */}
+            {block.images && block.images.length > 0 && (
+                <div className="my-2 flex flex-wrap gap-2">
+                    {block.images.map((src, idx) => (
+                        <img key={idx} src={src} alt={`Pasted ${idx}`} style={{maxWidth: "100%"}} />
+                    ))}
                 </div>
-                )} */}
+            )}
             <div className="mt-2 p-2 border bg-gray-50">
-                <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                        img:({node, ...props}) =>{
-                            console.log('look here',props);
-                            if(!props.src) return null;
-                            return <img {...props} alt={props.alt} style={{maxWidth:"100%"}} />;
-                        }
-                    }}
-                >
+                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {block.content}
                 </ReactMarkdown>
             </div>
+            
        
             <button
             onClick={onMaterialDelete}
@@ -201,9 +187,22 @@ function LabBuilder(){
         ]);
     };
 
+    //update block from child component 
     const updateBlock = (id, updated) => {
+        //replace old block with new block
         setBlocks(blocks.map((b) => (b.id === id ? updated : b)));
     };
+
+    const moveBlock = (from, to)=>{
+        if(to<0 || to>blocks.length-1) return;
+        const updatedBlocks = [...blocks];
+        //remove block is moving
+        const [moveBlock] = updatedBlocks.splice(from,1);
+        //you could also do moveBlock= and then call moveBlock[0]
+        //move moveBlock to "to" index
+        updatedBlocks.splice(to,0,moveBlock);
+        setBlocks(updatedBlocks);
+    }
 
     const saveLab = () => {
         const lab = { title: title, blocks};
@@ -211,6 +210,22 @@ function LabBuilder(){
         console.log("Lab JSON:", lab);
         //alert("Lab saved! Check console for JSON.");
     };
+
+    const loadLab = ()=>{
+        const labData = localStorage.getItem("labData");
+        if(labData){
+            try{
+                const lab = JSON.parse(labData);
+                setTitle(lab.title || "");
+                setBlocks(lab.blocks || []);
+                console.log("lab loaded into blocks");
+            }catch(e){
+                alert("Failed to parse lab JSON!");
+            }
+        }else{
+            alert("No saved lab found");
+        }
+    }
 
     return (
         <div className="max-w-3xl mx-auto p-6">
@@ -232,25 +247,46 @@ function LabBuilder(){
         />
 
     {/* DISPLAY BLOCKS */}
-        {blocks.map((block) => (
-            block.blockType === "material" ? 
-            (
-                <MaterialEditor
-                key={block.id}
-                block={block}
-                onMaterialChange={(updatedBlock) => updateBlock(block.id, updatedBlock)}
-                onMaterialDelete={()=>deleteBlock(block.id)}
-                />
-            ) : ( //type is short, code or textarea
-                <QuestionEditor
-                    key={block.id}
-                    q={block}
-                    // YOU MUST ALWAYS PASS A FUNCTION AN EVENT HANDLER
-                    //updatedBlock is the new version of the block passed and updated from child
-                    onQuestionChange={(updatedBlock) => updateBlock(block.id, updatedBlock)}
-                    onQuestionDelete={()=>deleteBlock(block.id)}
-                />
-            )
+        {blocks.map((block, i) => (
+            <div key={block.id || i} className="mb-6 flex items-start">
+                {/* Arrow buttons on the left */}
+                <div className="flex flex-col mr-2">
+                    <button
+                        disabled={i === 0}
+                        onClick={() => moveBlock(i, i - 1)}
+                        className="bg-gray-300 text-black px-2 py-1 rounded mb-1"
+                        title="Move Up"
+                    >
+                        ↑
+                    </button>
+                    <button
+                        disabled={i === blocks.length - 1}
+                        onClick={() => moveBlock(i, i + 1)}
+                        className="bg-gray-300 text-black px-2 py-1 rounded"
+                        title="Move Down"
+                    >
+                        ↓
+                    </button>
+                </div>
+                {/* Block editor */}
+                <div className="flex-1">
+                    {block.blockType === "material" ? (
+                        <MaterialEditor
+                            key={block.id}
+                            block={block}
+                            onMaterialChange={(updatedBlock) => updateBlock(block.id, updatedBlock)}
+                            onMaterialDelete={() => deleteBlock(block.id)}
+                        />
+                    ) : (
+                        <QuestionEditor
+                            key={block.id}
+                            q={block}
+                            onQuestionChange={(updatedBlock) => updateBlock(block.id, updatedBlock)}
+                            onQuestionDelete={() => deleteBlock(block.id)}
+                        />
+                    )}
+                </div>
+            </div>
         ))}
     
     {/* BUTTONS */}
@@ -270,9 +306,97 @@ function LabBuilder(){
             onClick={saveLab}
             className="bg-blue-600 text-white px-4 py-2 rounded"
         >
-            💾 Save Lab
+            💾 Save
         </button>
+        <button
+            onClick={loadLab}
+            className="bg-yellow-600 text-white px-4 py-2 rounded mr-2"
+        >
+            📂 Load
+        </button>
+        <button
+            onClick={() => {
+                const lab = { title, blocks };
+                const blob = new Blob([JSON.stringify(lab, null, 2)], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "lab.json";
+                a.click();
+                URL.revokeObjectURL(url);
+            }}
+            className="bg-blue-600 text-white px-4 py-2 rounded ml-2"
+        >
+            ⬇️ Export
+</button>
+
+
+    {/* LAB PREVIEW */}
+        <div className="mt-8 p-6 border rounded bg-gray-100">
+            <h2 className="text-xl font-bold mb-4">Lab Preview</h2>
         </div>
+        <div>
+            <h3 className="font-semibold mb-2">{title}</h3>
+        </div>
+            {blocks.map((block, i)=>(
+                <div key={block.id || i} className="mb-6">
+                    {block.blockType === "material" ? (
+                        <> {/*<></> allows you to return multiple elements together*/}
+                            {/* Show images */}
+                            {block.images && block.images.length > 0 && (
+                                <div className="my-2 flex flex-wrap gap-2">
+                                    {block.images.map((src, idx) => (
+                                        <img key={idx} src={src} alt={`Material ${i}`} style={{maxWidth: "100%"}} />
+                                    ))}
+                                </div>
+                            )}
+                            {/* Show Markdown as plain text */}
+                            <div className="mt-2 p-2 border bg-white">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                    {block.content}
+                                </ReactMarkdown>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div>
+                                <div className="font-semibold mb-1">{block.prompt}</div>
+                                <div className="mb-2 text-gray-700">{block.desc}</div>
+                                {block.subQuestions.length===0 && (
+                                    <>
+                                        {block.type === "short" && (<input type="text" className="w-full border p-2 mb-2" placeholder="Your answer..." />)}
+                                        {block.type === "textarea" && (<textarea className="w-full border p-2 mb-2" rows={3} placeholder="Your answer..." />)}
+                                        {block.type === "code" && (<textarea className="w-full border font-mono p-2 mb-2" rows={6} placeholder="Your code..." />)}
+                                    </>
+                                    )
+                                }
+                            </div>
+                            {block.subQuestions && block.subQuestions.length > 0 && (
+                                <div className="ml-4 border-l-2 pl-2">
+                                    {block.subQuestions.map((sq, j) => (
+                                        <div key={sq.id || j} className="mb-4">
+                                            <div className="font-semibold mb-1">{sq.prompt}</div>
+                                            <div className="mb-2 text-gray-700">{sq.desc}</div>
+                                            {sq.type === "short" && (
+                                                <input type="text" className="w-full border p-2 mb-2" placeholder="Your answer..." />
+                                            )}
+                                            {sq.type === "textarea" && (
+                                                <textarea className="w-full border p-2 mb-2" rows={3} placeholder="Your answer..." />
+                                            )}
+                                            {sq.type === "code" && (
+                                                <textarea className="w-full border font-mono p-2 mb-2" rows={6} placeholder="Your code..." />
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+            ))}
+
+        </div>
+       
     );
 }
 
