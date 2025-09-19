@@ -2,7 +2,9 @@ import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {createQuestion, createMaterial} from "../models/block";
-import { stringify } from "postcss";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
+
 
 
 
@@ -17,26 +19,29 @@ function QuestionEditor({ q, onQuestionChange, onQuestionDelete}) {
   //PROMPT TEXT BOX
   return (
     <div className="p-4 border rounded mb-4 bg-white shadow">
-      <input
+      <ReactQuill
         type="text"
         placeholder="Prompt"
         className="w-full border p-2 mb-2"
         value={q.prompt}
         rows={3}
-        onChange={(e) => {
-            //dont use update because it cannot pass an object as is
-            update("prompt", e.target.value);
-        }}
+        onChange={(value)=>update("prompt",value)}
+        // onChange={(e) => {
+        //     //dont use update because it cannot pass an object as is
+        //     update("prompt", e.target.value);
+        //}}
       />
   
-      <textarea
+      {/* <ReactQuill
         placeholder="Description"
         className="w-full border p-2 font-mono mb-2"
         rows="3"
         value={q.desc}
-        onChange={(e) => update("desc",e.target.value)}
-      />
+        onChange={(value)=>update("desc",value)}
+        //onChange={(e) => update("desc",e.target.value)}
+      /> */}
 
+    {/* DISPLAY SUB QUESTIONS */}
         {q.subQuestions && q.subQuestions.length > 0 && (
             <div className="ml-4 border-l-2 pl-2">
                 {q.subQuestions.map((sq, i) => (
@@ -113,15 +118,13 @@ function MaterialEditor({block, onMaterialChange, onMaterialDelete}){
     };
     return(
         <div className="p-4 border rounded mb-4 bg-white shadow">
-            <textarea
+            <ReactQuill
                 placeholder="Paste image or write here"
                 rows = {8}
                 className="w-full border p-2 font-mono mb-2"
                 value={block.content}
-                onChange={e=>{
-                    //console.log(e.target.value);
-                    update("content",e.target.value);}
-                }
+                // onChange handler doesn't receive a DOM event object, gives you content value directly
+                onChange={value=>update("content",value)}
                
                 onPaste={async (e)=>{
                     //find item from clipboard that is an image
@@ -146,11 +149,10 @@ function MaterialEditor({block, onMaterialChange, onMaterialDelete}){
                     ))}
                 </div>
             )}
-            <div className="mt-2 p-2 border bg-gray-50">
-                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {block.content}
-                </ReactMarkdown>
-            </div>
+
+            <div className="mt-2 p-2 border bg-gray-50"
+                 dangerouslySetInnerHTML={{ __html: block.content }} />
+            
             
        
             <button
@@ -268,7 +270,7 @@ function LabBuilder(){
                         ↓
                     </button>
                 </div>
-                {/* Block editor */}
+         {/* Block editor */}
                 <div className="flex-1">
                     {block.blockType === "material" ? (
                         <MaterialEditor
@@ -350,18 +352,15 @@ function LabBuilder(){
                                     ))}
                                 </div>
                             )}
-                            {/* Show Markdown as plain text */}
-                            <div className="mt-2 p-2 border bg-white">
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                    {block.content}
-                                </ReactMarkdown>
-                            </div>
+                            {/* Show reactQuill html  */}
+                             <div className="mt-2 p-2 border bg-gray-50"
+                                dangerouslySetInnerHTML={{ __html: block.content }} />
                         </>
                     ) : (
                         <>
                             <div>
-                                <div className="font-semibold mb-1">{block.prompt}</div>
-                                <div className="mb-2 text-gray-700">{block.desc}</div>
+                                <div className="font-semibold mb-1" dangerouslySetInnerHTML={{ __html: block.prompt }} />
+                                {/* <div className="mb-2 text-gray-700" dangerouslySetInnerHTML={{ __html: block.desc }} /> */}
                                 {block.subQuestions.length===0 && (
                                     <>
                                         {block.type === "short" && (<input type="text" className="w-full border p-2 mb-2" placeholder="Your answer..." />)}
@@ -375,8 +374,8 @@ function LabBuilder(){
                                 <div className="ml-4 border-l-2 pl-2">
                                     {block.subQuestions.map((sq, j) => (
                                         <div key={sq.id || j} className="mb-4">
-                                            <div className="font-semibold mb-1">{sq.prompt}</div>
-                                            <div className="mb-2 text-gray-700">{sq.desc}</div>
+                                            <div className="font-semibold mb-1" dangerouslySetInnerHTML={{ __html: block.prompt }} />
+                                            {/* <div className="mb-2 text-gray-700" dangerouslySetInnerHTML={{ __html: block.desc }} /> */}
                                             {sq.type === "short" && (
                                                 <input type="text" className="w-full border p-2 mb-2" placeholder="Your answer..." />
                                             )}
