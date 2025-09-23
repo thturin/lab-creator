@@ -1,16 +1,21 @@
 import axios from "axios";
-//require('dotenv').config({path: '../../../.env'});
+//require('dotenv').config();
 
 
 
 function LabPreview({blocks,title,responses,setResponses}){
-    const submitResponse = async(questionId,answerKey,q) =>{
+    const submitResponse = async(questionId) =>{
         const userAnswer = responses[questionId];
+        const block = blocks.find(b=>b.id === questionId);
+        const answerKey = block.key;
+        const question = block.prompt;
+        console.log('look here!!',userAnswer,answerKey,question);
        try{
+        console.log(`${process.env.REACT_APP_SERVER_HOST}/api/grade`);
         const response = await axios.post( `${process.env.REACT_APP_SERVER_HOST}/api/grade`,{
             userAnswer,
             answerKey,
-            q
+            question
         });
         console.log("Grading results",response.data);
        }catch(err){
@@ -110,7 +115,7 @@ function LabPreview({blocks,title,responses,setResponses}){
                                                 <textarea 
                                                 className="w-full border font-mono p-2 mb-2" 
                                                 rows={6} 
-                                                laceholder="Your code..."
+                                                placeholder="Your code..."
                                                 value={responses[sq.id ] || ""}
                                                 onChange={e=>setResponses({...responses,[sq.id]:e.target.value})}
                                                 />
@@ -125,7 +130,10 @@ function LabPreview({blocks,title,responses,setResponses}){
             ))}
             <button 
                 onClick={()=>{
-                    console.log('Responses submitted');
+                    const testBlock = blocks.find(b=> b.id===1758553008496);
+                    console.log(testBlock);
+                    console.log('hhelloooo')
+                    submitResponse(testBlock.id);
                 }}
                 className="bg-purple-600 text-white px-4 py-2 rounded mt-4"
             >

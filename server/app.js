@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config({path: '../.env'});
+require('dotenv').config();
 
 const gradeRoutes = require("./routes/gradeRoutes");
 
@@ -10,7 +10,7 @@ const app  = express();
 app.use(cors());
 app.use(express.json());
 
-console.log("Using Open AI Key:",process.env.OPENAI_API_KEY);
+// console.log("Using Open AI Key:",process.env.OPENAI_API_KEY);
 
 //health check
 app.get('/', (req,res)=>{

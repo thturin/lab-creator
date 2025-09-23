@@ -1,12 +1,13 @@
 const axios = require('axios');
-require('dotenv').config({path: '../../.env'});
+require('dotenv').config();
 
 
 const gradeQuestion = async (req, res) => {
     const {userAnswer, answerKey, question} = req.body;
+    console.log(userAnswer,answerKey,question);
     if(!userAnswer || !answerKey){
         //might be a question with subquestions 
-        res.status(400).json({error:'No user response or answer key'});
+        return res.status(400).json({error:'No user response or answer key'});
     }
 
     try{
