@@ -1,23 +1,20 @@
 import axios from "axios";
-require('dotenv').config({path: '../../../.env'});
+//require('dotenv').config({path: '../../../.env'});
 
 
 
 function LabPreview({blocks,title,responses,setResponses}){
     const submitResponse = async(questionId,answerKey,q) =>{
         const userAnswer = responses[questionId];
-       const answerKey = answerKey;
-       const question = q;
-
        try{
-        const response = await axios.post( `${process.env.SERVER_PORT}/api/grade`,{
+        const response = await axios.post( `${process.env.REACT_APP_SERVER_HOST}/api/grade`,{
             userAnswer,
             answerKey,
-            question
+            q
         });
         console.log("Grading results",response.data);
        }catch(err){
-        console.error("Error graing in LabPreview [LabpPreview.jsx");
+        console.error("Error grading in LabPreview [LabPreview.jsx]");
        }
     }
 
@@ -96,26 +93,26 @@ function LabPreview({blocks,title,responses,setResponses}){
                                                 <input type="text" 
                                                     className="w-full border p-2 mb-2" 
                                                     placeholder="Your answer..." 
-                                                    value={responses[block.id] || ""}
-                                                    onChange={e=>setResponses({...responses,[block.id]:e.target.value})}
+                                                    value={responses[sq.id] || ""}
+                                                    onChange={e=>setResponses({...responses,[sq.id]:e.target.value})}
                                                     />
                                             )}
                                             {sq.type === "textarea" && (
                                                 <textarea className="w-full border p-2 mb-2" 
                                                 rows={3} 
                                                 placeholder="Your answer..." 
-                                                value={responses[block.id] || ""}
-                                                onChange={e=>setResponses({...responses,[block.id]:e.target.value})}
+                                                value={responses[sq.id] || ""}
+                                                onChange={e=>setResponses({...responses,[sq.id]:e.target.value})}
 
                                                 />
                                             )}
                                             {sq.type === "code" && (
                                                 <textarea 
                                                 className="w-full border font-mono p-2 mb-2" 
-                                                rows={6} p
+                                                rows={6} 
                                                 laceholder="Your code..."
-                                                value={responses[block.id ] || ""}
-                                                onChange={e=>setResponses({...responses,[block.id]:e.target.value})}
+                                                value={responses[sq.id ] || ""}
+                                                onChange={e=>setResponses({...responses,[sq.id]:e.target.value})}
                                                 />
                                             )}
                                         </div>
