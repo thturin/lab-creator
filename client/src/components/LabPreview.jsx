@@ -1,27 +1,58 @@
 import axios from "axios";
+import {useState} from 'react';
 //require('dotenv').config();
 
 
 
-function LabPreview({ blocks, title, responses, setResponses }) {
-    const submitResponses = async () => {
+function LabPreview({ blocks, title}) {
+    const [responses,setResponses]= useState({});
+    const [gradedResults, setGradedResults]=useState([]);
 
+    const submitResponses = async () => {
         for (const [questionId, userAnswer] of Object.entries(responses)) {
-            const block = blocks.find(b => b.id === questionId);
-            console.log(questionId, userAnswer);
-            console.log(block);
-            const answerKey = block.key;
-            const question = block.prompt;
-            console.log(`student response -> ${userAnswer}\nanswer key -> ${answerKey}\nprompt-> ${question}`);
+            //questionId is a string
+            console.log(responses);
+            let answerKey='';
+            let question ='';
+            let type='';
+            //THIS ASSUMES SUB QUESTIONS DO NOT HAVE SUB QUESTIONS
+            for(const block of blocks){
+                if (block.blockType === 'question' && 
+                    block.subQuestions.length===0 &&
+                    block.id===questionId){
+                        answerKey=block.key;
+                        question=block.prompt;
+                        type=block.type;
+                        break;
+                }
+                if(block.blockType==='question'&&
+                    block.subQuestions.length>0){
+                        for(const sq of block.subQuestions){
+                            if(sq.id===questionId){
+                                answerKey=sq.key;
+                                question=sq.prompt;
+                                type=sq.type;
+                                break;
+                            }
+                        }
+                        
+                    }
+            }
+
             try {
-                console.log(`${process.env.REACT_APP_SERVER_HOST}/api/grade`);
-                const response = await axios.post(`${process.env.REACT_APP_SERVER_HOST}/api/grade`, {
+                console.log(`${process.env.REACT_APP_SERVER_HOST}/grade`);
+                const response = await axios.post(`${process.env.REACT_APP_SERVER_HOST}/grade`, {
                     userAnswer,
                     answerKey,
                     question,
-                    questionType: block.type
+                    questionType:type
                 });
                 console.log("Grading results", response.data);
+                setGradedResults(prev=>[...prev,{
+                    id:questionId,
+                    score:response.data.score,
+                    feedback:response.data.feedback
+                }]);
             } catch (err) {
                 console.error("Error grading in LabPreview [LabPreview.jsx]");
             }

@@ -10,12 +10,14 @@ const app  = express();
 app.use(cors());
 app.use(express.json());
 
-// console.log("Using Open AI Key:",process.env.OPENAI_API_KEY);
+console.log("Using Open AI Key:",process.env.OPENAI_API_KEY);
 
 //health check
 app.get('/', (req,res)=>{
     res.send('Lab Creator Backend is running!');
 })
+
+app.get('/health',(req,res)=>res.send("grade router is working!"));
 
 const PORT = process.env.SERVER_PORT || 4000;
 app.listen(PORT, ()=>{

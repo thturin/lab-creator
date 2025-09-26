@@ -171,10 +171,7 @@ function MaterialEditor({block, onMaterialChange, onMaterialDelete}){
     )
 }
 
-function LabBuilder(){
-    const [blocks, setBlocks] = useState([]); //directions, questions, etc
-    const [title, setTitle] = useState("");
-    const [responses, setResponses] = useState({});
+function LabBuilder({blocks, setBlocks, title, setTitle}){
 
     const deleteBlock = (id) =>{
         setBlocks(blocks.filter(b=> b.id !== id)); //remove block with id
@@ -341,13 +338,6 @@ function LabBuilder(){
             ⬇️ Export
 </button>
 
-        <LabPreview 
-        //without the {} around props, react would treact as a string literal
-            blocks = {blocks}
-            title = {title}
-            responses = {responses}
-            setResponses = {setResponses}
-        />
         </div>
     );
 }

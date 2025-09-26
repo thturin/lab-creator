@@ -1,5 +1,5 @@
 export const createQuestion = () => ({
-  id: Date.now(),
+  id: Date.now().toString(),
   blockType: "question",
   type: "short", //defaults to short
   prompt: "",
@@ -9,7 +9,7 @@ export const createQuestion = () => ({
 });
 
 export const createMaterial = () => ({
-  id: Date.now(),
+  id: Date.now().toString(),
   blockType: "material",
   content: "",
   images: [] //array of base64 strings
