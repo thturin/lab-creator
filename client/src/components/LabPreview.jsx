@@ -1,21 +1,35 @@
 import axios from "axios";
-//require('dotenv').config({path: '../../../.env'});
+//require('dotenv').config();
 
 
 
-function LabPreview({blocks,title,responses,setResponses}){
-    const submitResponse = async(questionId,answerKey,q) =>{
-        const userAnswer = responses[questionId];
-       try{
-        const response = await axios.post( `${process.env.REACT_APP_SERVER_HOST}/api/grade`,{
-            userAnswer,
-            answerKey,
-            q
-        });
-        console.log("Grading results",response.data);
-       }catch(err){
-        console.error("Error grading in LabPreview [LabPreview.jsx]");
-       }
+function LabPreview({ blocks, title, responses, setResponses }) {
+    const submitResponses = async () => {
+
+        for (const [questionId, userAnswer] of Object.entries(responses)) {
+            const block = blocks.find(b => b.id === questionId);
+            console.log(questionId, userAnswer);
+            console.log(block);
+            const answerKey = block.key;
+            const question = block.prompt;
+            console.log(`student response -> ${userAnswer}\nanswer key -> ${answerKey}\nprompt-> ${question}`);
+            try {
+                console.log(`${process.env.REACT_APP_SERVER_HOST}/api/grade`);
+                const response = await axios.post(`${process.env.REACT_APP_SERVER_HOST}/api/grade`, {
+                    userAnswer,
+                    answerKey,
+                    question,
+                    questionType: block.type
+                });
+                console.log("Grading results", response.data);
+            } catch (err) {
+                console.error("Error grading in LabPreview [LabPreview.jsx]");
+            }
+        }
+
+
+
+
     }
 
     return (
@@ -27,7 +41,7 @@ function LabPreview({blocks,title,responses,setResponses}){
             <div>
                 <h3 className="font-semibold mb-2">{title}</h3>
             </div>
-            {blocks.map((block, i)=>(
+            {blocks.map((block, i) => (
                 <div key={block.id || i} className="mb-6">
                     {block.blockType === "material" ? (
                         <> {/*<></> allows you to return multiple elements together*/}
@@ -35,7 +49,7 @@ function LabPreview({blocks,title,responses,setResponses}){
                             {block.images && block.images.length > 0 && (
                                 <div className="my-2 flex flex-wrap gap-2">
                                     {block.images.map((src, idx) => (
-                                        <img key={idx} src={src} alt={`Material ${i}`} style={{maxWidth: "100%"}} />
+                                        <img key={idx} src={src} alt={`Material ${i}`} style={{ maxWidth: "100%" }} />
                                     ))}
                                 </div>
                             )}
@@ -48,39 +62,39 @@ function LabPreview({blocks,title,responses,setResponses}){
                             <div>
                                 <div className="font-semibold mb-1" dangerouslySetInnerHTML={{ __html: block.prompt }} />
                                 {/* <div className="mb-2 text-gray-700" dangerouslySetInnerHTML={{ __html: block.desc }} /> */}
-                                {block.subQuestions.length===0 && (
+                                {block.subQuestions.length === 0 && (
                                     <>
-                                        {block.type === "short" && 
-                                            (<input type="text" 
-                                                    className="w-full border p-2 mb-2" 
-                                                    placeholder="Your answer..." 
-                                                    value={responses[block.id] || ""}
-                                                    onChange={e=> setResponses({...responses,[block.id]:e.target.value})}
-                                                    //new responses object created, copies all previous respones and sets 
-                                                    //the value for the current block.id to the new input value
-                                                    // responses = {
-                                                    //     123: "Answer for block 123",
-                                                    //     456: "Answer for block 456"
-                                                    //     }
+                                        {block.type === "short" &&
+                                            (<input type="text"
+                                                className="w-full border p-2 mb-2"
+                                                placeholder="Your answer..."
+                                                value={responses[block.id] || ""}
+                                                onChange={e => setResponses({ ...responses, [block.id]: e.target.value })}
+                                            //new responses object created, copies all previous respones and sets 
+                                            //the value for the current block.id to the new input value
+                                            // responses = {
+                                            //     123: "Answer for block 123",
+                                            //     456: "Answer for block 456"
+                                            //     }
                                             />)}
-                                        {block.type === "textarea" && 
-                                            (<textarea 
-                                                className="w-full border p-2 mb-2" 
-                                                rows={3} 
-                                                placeholder="Your answer..." 
-                                                value={responses[block.id]|| ""}
-                                                onChange={e=>setResponses({...responses,[block.id]:e.target.value})}
-                                                />)}
-                                        {block.type === "code" && 
-                                        (<textarea 
-                                            className="w-full border font-mono p-2 mb-2" 
-                                            rows={6} 
-                                            placeholder="Your code..." 
-                                            value={responses[block.id] || ""}
-                                            onChange={e=>setResponses({...responses,[block.id]:e.target.value})}
+                                        {block.type === "textarea" &&
+                                            (<textarea
+                                                className="w-full border p-2 mb-2"
+                                                rows={3}
+                                                placeholder="Your answer..."
+                                                value={responses[block.id] || ""}
+                                                onChange={e => setResponses({ ...responses, [block.id]: e.target.value })}
+                                            />)}
+                                        {block.type === "code" &&
+                                            (<textarea
+                                                className="w-full border font-mono p-2 mb-2"
+                                                rows={6}
+                                                placeholder="Your code..."
+                                                value={responses[block.id] || ""}
+                                                onChange={e => setResponses({ ...responses, [block.id]: e.target.value })}
                                             />)}
                                     </>
-                                    )
+                                )
                                 }
                             </div>
                             {block.subQuestions && block.subQuestions.length > 0 && (
@@ -90,29 +104,29 @@ function LabPreview({blocks,title,responses,setResponses}){
                                             <div className="font-semibold mb-1" dangerouslySetInnerHTML={{ __html: sq.prompt }} />
                                             {/* <div className="mb-2 text-gray-700" dangerouslySetInnerHTML={{ __html: block.desc }} /> */}
                                             {sq.type === "short" && (
-                                                <input type="text" 
-                                                    className="w-full border p-2 mb-2" 
-                                                    placeholder="Your answer..." 
+                                                <input type="text"
+                                                    className="w-full border p-2 mb-2"
+                                                    placeholder="Your answer..."
                                                     value={responses[sq.id] || ""}
-                                                    onChange={e=>setResponses({...responses,[sq.id]:e.target.value})}
-                                                    />
+                                                    onChange={e => setResponses({ ...responses, [sq.id]: e.target.value })}
+                                                />
                                             )}
                                             {sq.type === "textarea" && (
-                                                <textarea className="w-full border p-2 mb-2" 
-                                                rows={3} 
-                                                placeholder="Your answer..." 
-                                                value={responses[sq.id] || ""}
-                                                onChange={e=>setResponses({...responses,[sq.id]:e.target.value})}
+                                                <textarea className="w-full border p-2 mb-2"
+                                                    rows={3}
+                                                    placeholder="Your answer..."
+                                                    value={responses[sq.id] || ""}
+                                                    onChange={e => setResponses({ ...responses, [sq.id]: e.target.value })}
 
                                                 />
                                             )}
                                             {sq.type === "code" && (
-                                                <textarea 
-                                                className="w-full border font-mono p-2 mb-2" 
-                                                rows={6} 
-                                                laceholder="Your code..."
-                                                value={responses[sq.id ] || ""}
-                                                onChange={e=>setResponses({...responses,[sq.id]:e.target.value})}
+                                                <textarea
+                                                    className="w-full border font-mono p-2 mb-2"
+                                                    rows={6}
+                                                    placeholder="Your code..."
+                                                    value={responses[sq.id] || ""}
+                                                    onChange={e => setResponses({ ...responses, [sq.id]: e.target.value })}
                                                 />
                                             )}
                                         </div>
@@ -123,9 +137,9 @@ function LabPreview({blocks,title,responses,setResponses}){
                     )}
                 </div>
             ))}
-            <button 
-                onClick={()=>{
-                    console.log('Responses submitted');
+            <button
+                onClick={() => {
+                    submitResponses();
                 }}
                 className="bg-purple-600 text-white px-4 py-2 rounded mt-4"
             >

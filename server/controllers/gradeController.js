@@ -1,12 +1,13 @@
 const axios = require('axios');
-require('dotenv').config({path: '../../.env'});
+require('dotenv').config();
 
 
 const gradeQuestion = async (req, res) => {
-    const {userAnswer, answerKey, question} = req.body;
+    const {userAnswer, answerKey, question, questionType} = req.body;
+    console.log(userAnswer,answerKey,question);
     if(!userAnswer || !answerKey){
         //might be a question with subquestions 
-        res.status(400).json({error:'No user response or answer key'});
+        return res.status(400).json({error:'No user response or answer key'});
     }
 
     try{
@@ -14,7 +15,9 @@ const gradeQuestion = async (req, res) => {
         Answer Key: ${answerKey}
         Student Answer: ${userAnswer}
         Question: ${question}
+        Question Type: ${questionType}
         Is the student's answer correct? Give a score from 0 to 1 and a brief feedback.
+        If the response is an exact copy of the answer key and the question type is "textarea", give a 0.
         Respond in JSON: {"score": number, "feedback": string}`;
 
         const response = await axios.post(

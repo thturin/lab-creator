@@ -78,3 +78,7 @@ trap cleanup INT
 
 # Keep script running
 wait
+#!/bin/bash
+
+
+

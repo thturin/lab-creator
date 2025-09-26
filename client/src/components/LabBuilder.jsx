@@ -220,20 +220,31 @@ function LabBuilder(){
         //alert("Lab saved! Check console for JSON.");
     };
 
-    const loadLab = ()=>{
-        const labData = localStorage.getItem("labData");
-        if(labData){
-            try{
-                const lab = JSON.parse(labData);
-                setTitle(lab.title || "");
-                setBlocks(lab.blocks || []);
-                console.log("lab loaded into blocks");
-            }catch(e){
-                alert("Failed to parse lab JSON!");
-            }
-        }else{
-            alert("No saved lab found");
+    const loadLab = async()=>{
+        try{
+            
+            const lab = await import('../lab-tests/lab.json');
+            setTitle(lab.default.title || "");
+            setBlocks(lab.default.blocks || []);
+            console.log('Lab loaded from lab.json');
+
+        }catch(err){
+            console.error('Lab did not load from file successfully',err.message);
         }
+      
+
+    }
+
+    const exportLabToFolder = ()=>{
+        const lab = {title, blocks};
+        const filename = 'lab.json';
+        const blob = new Blob([JSON.stringify(lab, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
     }
 
     return (
@@ -324,16 +335,7 @@ function LabBuilder(){
             📂 Load
         </button>
         <button
-            onClick={() => {
-                const lab = { title, blocks };
-                const blob = new Blob([JSON.stringify(lab, null, 2)], { type: "application/json" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = "lab.json";
-                a.click();
-                URL.revokeObjectURL(url);
-            }}
+            onClick={exportLabToFolder}
             className="bg-blue-600 text-white px-4 py-2 rounded ml-2"
         >
             ⬇️ Export
