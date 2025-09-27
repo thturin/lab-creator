@@ -3,7 +3,7 @@ const router = express.Router();
 const { gradeQuestion } = require('../controllers/gradeController');
 
 
-//ROOT localhost:4001/api/grade
+//ROOT localhost:4000/api/grade
 router.post('', gradeQuestion);
 
 
