@@ -210,10 +210,15 @@ function LabPreview({ blocks, title}) {
                                                     onChange={e => setResponses({ ...responses, [sq.id]: e.target.value })}
                                                 />
                                             )}
-                                            {gradedResults[sq.id] && (
+                                            {gradedResults[block.id] ? (
                                                 <div className="mt-2 p-2 bg-green-50 border rounded text-sm">
-                                                    <div><strong>Score:</strong> {gradedResults[sq.id].score}</div>
-                                                    <div><strong>Feedback:</strong> {gradedResults[sq.id].feedback}</div>
+                                                    <div><strong>Score:</strong> {gradedResults[block.id].score}</div>
+                                                    <div><strong>Feedback:</strong> {gradedResults[block.id].feedback}</div>
+                                                </div>
+                                            ):(
+                                                <div className="mt-2 p-2 bg-green-50 border rounded text-sm">
+                                                    <div><strong>Score:</strong> 0</div>
+                                                    <div><strong>Feedback:</strong> no response</div>
                                                 </div>
                                             )}
                                         </div>
