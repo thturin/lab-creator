@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {createQuestion, createMaterial} from "../models/block";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
@@ -109,52 +109,86 @@ function QuestionEditor({ q, onQuestionChange, onQuestionDelete}) {
 }
 
 function MaterialEditor({block, onMaterialChange, onMaterialDelete}){
-    const [image, setImage] = useState();
+    const quillRef = useRef();
     const update = (field,value) =>{
         //ONCHANGE CREATES A NEW BLOCK OBJECT WITH UPDATED FIELD AND TYPE VALUES 
-        onMaterialChange({...block, [field]:value})
-        //text image block properties blockType, type, content
+        let updatedBlock = {...block,[field]:value};
+        //extract images from content when it changes
+        if(field==='content'){
+            const images = extractImagesFromHTML(value);
+            updatedBlock.images = images;
+        }
+        onMaterialChange(updatedBlock);
+        //text image block properties blockType, type, content, images
     };
 
-    const addImage=(base64)=>{
-        onMaterialChange({
-            ...block,
-            images: [...(block.images||[]),base64]
-        })
+    const extractImagesFromHTML = (html) =>{ //extracts image url from html
+        const div = document.createElement('div');
+        div.innerHTML = html;
+        const imgs = div.querySelectorAll('img');
+        return Array.from(imgs).map(img=> img.src);
     };
+
+    // const addImage=(base64)=>{
+    //     console.log(base64);
+    //     onMaterialChange({
+    //         ...block,
+    //         images: [...(block.images||[]),base64]
+    //     })
+    // };
+
+
+
+
+    const modules = {
+        toolbar: [
+                ['bold', 'italic', 'underline'],
+                ['image'],//default quill image handler
+                ['clean']
+            ]
+  
+        };
+    
+    
     return(
         <div className="p-4 border rounded mb-4 bg-white shadow">
             <ReactQuill
+                ref={quillRef}
                 placeholder="Paste image or write here"
                 rows = {8}
                 className="w-full border p-2 font-mono mb-2"
                 value={block.content}
                 // onChange handler doesn't receive a DOM event object, gives you content value directly
-                onChange={value=>update("content",value)}
-               
-                onPaste={async (e)=>{
-                    //find item from clipboard that is an image
-                    const item = Array.from(e.clipboardData.items).find(i=>i.type.startsWith("image/"));
-                    if(item){
-                        const file = item.getAsFile(); //ge tthe image file
-                        const reader = new FileReader();
-                        reader.onload =(ev)=>{ //executes once image file has been converted to base64 data URL
-                            addImage(ev.target.result);            
-                            //update("content",ev.target.result);
-                        }
-                        reader.readAsDataURL(file);
-                        e.preventDefault();
-                    }
+                //in other words, you dont need to use e=>e.target.value
+                onChange={value=>{
+                    update("content",value);
                 }}
+                modules={modules}
+                // onPaste={async (e)=>{
+                //     //find item from clipboard that is an image
+                //     const item = Array.from(e.clipboardData.items).find(i=>i.type.startsWith("image/"));
+                //     console.log(item);
+                //     if(item){
+
+                //         const file = item.getAsFile(); //ge tthe image file
+                //         const reader = new FileReader();
+                //         reader.onload =(ev)=>{ //executes once image file has been converted to base64 data URL
+                //             addImage(ev.target.result);            
+                //             //update("content",ev.target.result);
+                //         }
+                //         reader.readAsDataURL(file);
+                //         e.preventDefault();
+                //     }
+                // }}
             />
             {/* Render images above Markdown preview */}
-            {block.images && block.images.length > 0 && (
+            {/* {block.images && block.images.length > 0 && (
                 <div className="my-2 flex flex-wrap gap-2">
                     {block.images.map((src, idx) => (
                         <img key={idx} src={src} alt={`Pasted ${idx}`} style={{maxWidth: "100%"}} />
                     ))}
                 </div>
-            )}
+            )} */}
 
             <div className="mt-2 p-2 border bg-gray-50"
                  dangerouslySetInnerHTML={{ __html: block.content }} />
