@@ -23,8 +23,9 @@ function LabPreview({ blocks, title}) {
         let finalScore = 0;
         const details = allQuestions.map((q,i)=>{           
             const score = gradedResults[q.id] ? parseFloat(gradedResults[q.id].score) :0;
-            //console.log(`score ${score} for ${q.id}`);
+            console.log(`score ${score} for ${q.id}`);
             finalScore += score;
+            console.log(finalScore);
             return {
                 number:i+1,
                 score
@@ -241,7 +242,7 @@ function LabPreview({ blocks, title}) {
             {finalScore && (
                 <div className="mb-6 p-4 border rounded bg-blue-50">
                     <h3 className="font-bold mb-2">Score</h3>
-                        Total Score: {finalScore.score.toFixed(2)} / {finalScore.details.length}
+                        Total Score: {parseFloat(finalScore.score).toFixed(2)} / {finalScore.details.length}
                 </div>
             )}
         </>
