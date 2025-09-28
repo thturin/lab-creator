@@ -220,7 +220,7 @@ function LabBuilder({blocks, setBlocks, title, setTitle}){
     const loadLab = async()=>{
         try{
             
-            const lab = await import('../lab-tests/lab.json');
+            const lab = await import('../lab-tests/u1T6_IntroToObjects.json');
             setTitle(lab.default.title || "");
             setBlocks(lab.default.blocks || []);
             console.log('Lab loaded from lab.json');
