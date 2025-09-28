@@ -129,17 +129,6 @@ function MaterialEditor({block, onMaterialChange, onMaterialDelete}){
         return Array.from(imgs).map(img=> img.src);
     };
 
-    // const addImage=(base64)=>{
-    //     console.log(base64);
-    //     onMaterialChange({
-    //         ...block,
-    //         images: [...(block.images||[]),base64]
-    //     })
-    // };
-
-
-
-
     const modules = {
         toolbar: [
                 ['bold', 'italic', 'underline'],
@@ -164,22 +153,6 @@ function MaterialEditor({block, onMaterialChange, onMaterialDelete}){
                     update("content",value);
                 }}
                 modules={modules}
-                // onPaste={async (e)=>{
-                //     //find item from clipboard that is an image
-                //     const item = Array.from(e.clipboardData.items).find(i=>i.type.startsWith("image/"));
-                //     console.log(item);
-                //     if(item){
-
-                //         const file = item.getAsFile(); //ge tthe image file
-                //         const reader = new FileReader();
-                //         reader.onload =(ev)=>{ //executes once image file has been converted to base64 data URL
-                //             addImage(ev.target.result);            
-                //             //update("content",ev.target.result);
-                //         }
-                //         reader.readAsDataURL(file);
-                //         e.preventDefault();
-                //     }
-                // }}
             />
             {/* Render images above Markdown preview */}
             {/* {block.images && block.images.length > 0 && (
