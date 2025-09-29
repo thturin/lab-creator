@@ -3,6 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const gradeRoutes = require("./routes/gradeRoutes");
+const sessionRoutes = require("./routes/sessionRoutes");
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
@@ -17,7 +18,7 @@ app.get('/', (req,res)=>{
     res.send('Lab Creator Backend is running!');
 })
 
-app.get('/health',(req,res)=>res.send("grade router is working!"));
+
 
 const PORT = process.env.SERVER_PORT || 4000;
 app.listen(PORT, ()=>{
@@ -26,3 +27,4 @@ app.listen(PORT, ()=>{
 
 
 app.use('/api/grade',gradeRoutes);
+app.use('/api/session',sessionRoutes);
