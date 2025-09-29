@@ -18,6 +18,7 @@ const gradeQuestion = async (req, res) => {
         Question Type: ${questionType}
         Is the student's answer correct? Give a score from 0 to 1 and a brief feedback.
         If the response is an exact copy of the answer key and the question type is "textarea", give a 0.
+        Do not take off points for grammar mistakes and misspelling.
         Respond in JSON: {"score": number, "feedback": string}`;
 
         const response = await axios.post(

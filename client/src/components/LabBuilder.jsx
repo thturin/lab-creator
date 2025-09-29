@@ -16,6 +16,14 @@ function QuestionEditor({ q, onQuestionChange, onQuestionDelete}) {
     //properties of questionBlock blockType, type, prompt, desc
   };
 
+  const modules = {
+     toolbar: [
+            ['bold', 'italic', 'underline'],
+            ['code-block'], // ✅ Add code block support
+            ['clean']
+        ]
+  }
+
   //DISPLAY PROMPT TEXT BOX
   return (
     <div className="p-4 border rounded mb-4 bg-white shadow">
@@ -31,16 +39,17 @@ function QuestionEditor({ q, onQuestionChange, onQuestionDelete}) {
         />
       </div>
 
-{/*DISPLAY KEY INPUT. If q has subquestions, don't render*/}
+{/*DISPLAY ANSWER KEY. If q has subquestions, don't render*/}
     {q.subQuestions.length===0 && (
         <div className="w-64">
             <label className="block font-semibold mb-1">Answer Key</label>
-            <textarea
-            type="text"
-            className="w-full border p-2 mb-2"
-            placeholder="Admin Key"
-            value={q.key || ""}
-            onChange={e => update("key", e.target.value)}
+            <ReactQuill
+                placeholder="Admin Key"
+                className="w-full border mb-2"
+                value={q.key || ""}
+                onChange={value=>update("key",value)}
+                modules={modules}
+                theme="snow"
             />
       </div>
     )}
@@ -227,7 +236,7 @@ function LabBuilder({blocks, setBlocks, title, setTitle}){
     const loadLab = async()=>{
         try{
             
-            const lab = await import('../lab-tests/u1T6_IntroToObjects.json');
+            const lab = await import('../lab-tests/U1T6.json');
             setTitle(lab.default.title || "");
             setBlocks(lab.default.blocks || []);
             console.log('Lab loaded from lab.json');

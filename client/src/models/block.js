@@ -5,6 +5,7 @@ export const createQuestion = () => ({
   prompt: "",
   desc: "",
   key: "",
+  aiPrompt:"",
   subQuestions: []
 });
 

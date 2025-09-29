@@ -42,9 +42,9 @@ function LabPreview({ blocks, title}) {
     };
    
     const submitResponses = async () => {
+        alert('Submitted!');
         for (const [questionId, userAnswer] of Object.entries(responses)) {
             //questionId is a string
-            console.log(responses);
             let answerKey='';
             let question ='';
             let type='';
@@ -78,7 +78,7 @@ function LabPreview({ blocks, title}) {
                     question,
                     questionType:type
                 });
-                console.log("Grading results", response.data);
+                //console.log("Grading results", response.data);
 
                 setGradedResults(prev=>({
                     ...prev, //copy all previous graded results
@@ -134,6 +134,7 @@ function LabPreview({ blocks, title}) {
                                                 placeholder="Your answer..."
                                                 value={responses[block.id] || ""} //...responses is a shallow copy
                                                 onChange={e => setResponses({ ...responses, [block.id]: e.target.value })}
+                                          
                                             //new responses object created, copies all previous respones and sets 
                                             //the value for the current block.id to the new input value
                                             // responses = {
@@ -211,10 +212,10 @@ function LabPreview({ blocks, title}) {
                                                     onChange={e => setResponses({ ...responses, [sq.id]: e.target.value })}
                                                 />
                                             )}
-                                            {gradedResults[block.id] ? (
+                                            {gradedResults[sq.id] ? (
                                                 <div className="mt-2 p-2 bg-green-50 border rounded text-sm">
-                                                    <div><strong>Score:</strong> {gradedResults[block.id].score}</div>
-                                                    <div><strong>Feedback:</strong> {gradedResults[block.id].feedback}</div>
+                                                    <div><strong>Score:</strong> {gradedResults[sq.id].score}</div>
+                                                    <div><strong>Feedback:</strong> {gradedResults[sq.id].feedback}</div>
                                                 </div>
                                             ):(
                                                 <div className="mt-2 p-2 bg-green-50 border rounded text-sm">
