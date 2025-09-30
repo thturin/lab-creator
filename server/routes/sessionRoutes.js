@@ -4,8 +4,8 @@ const { gradeQuestion } = require('../controllers/gradeController');
 const {loadSession, saveSession} = require('../controllers/sessionController');
 
 //ROOT localhost:4000/api/session
-router.post('/save-session', );
-router.get('/load-session/:title',);
+router.post('/save-session', saveSession);
+router.get('/load-session/:title',loadSession);
 
 
 

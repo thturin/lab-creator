@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { gradeQuestion } = require('../controllers/gradeController');
+const { gradeQuestion,gradeQuestionDeepSeek } = require('../controllers/gradeController');
 
 
 //ROOT localhost:4000/api/grade
-router.post('', gradeQuestion);
+router.post('', gradeQuestionDeepSeek);
 
 
 

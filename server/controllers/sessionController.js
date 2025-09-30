@@ -1,6 +1,8 @@
 const axios = require('axios');
 require('dotenv').config();
+const { PrismaClient } = require('@prisma/client');
 
+const prisma = new PrismaClient();
 
 const saveSession = async(req,res)=>{
     const {labInfo,responses,gradedResults,finalScore} = req.body;
@@ -8,8 +10,8 @@ const saveSession = async(req,res)=>{
     if(!title || !studentId) return res.status(400).json({error:'Missing assignment title or Student Id'});
     try{
         //upsert updates if session exists, or create if it does not
-        const sessoin = await prisma.session.upsert({
-            where: {labTitle_studentId: {title,studentId}},
+        const session = await prisma.session.upsert({
+            where: {labTitle_studentId: {labTitle:title,studentId}},
             update: {responses,gradedResults,finalScore},
             create: {labTitle:title, username, studentId, responses,gradedResults,finalScore}
         });
@@ -21,7 +23,8 @@ const saveSession = async(req,res)=>{
 };
 
 const loadSession = async(req,res)=>{
-    const {title, studentId} = req.params;
+    const {title} = req.params;
+    const {studentId} = req.body;
     if(!title || !studentId) return res.status(400).json({error: 'Missing lab title or Student Id'});
     try{
         const session = await prisma.session.findUnique({
@@ -35,8 +38,6 @@ const loadSession = async(req,res)=>{
         console.error('Error in getSession()->',err);
         res.json(500).json({error:'Count not get session'});
     }
-
-
 }
 
 module.exports = { saveSession, loadSession };
