@@ -21,9 +21,9 @@ const gradeQuestion = async (req, res) => {
         Question Type: ${questionType}
         Is the student's answer correct? Give a score from 0 to 1 and a brief feedback.
         The students are learning so it's best to give good feedback and be leniant on scoring.
-        If the response is an exact copy of the answer key and the question type is "textarea", give a 0.
         Do not take off points for grammar mistakes and misspelling.
         Respond in JSON: {"score": number, "feedback": string}`;
+        console.log(prompt);
 
         const response = await axios.post(
             "https://api.openai.com/v1/chat/completions",
@@ -69,7 +69,8 @@ const gradeQuestionDeepSeek = async (req,res)=>{
             Question: ${question}
             Question Type: ${questionType}
             Is the student's answer correct? Give a score from 0 to 1 and a brief feedback.
-            If the response is an exact copy of the answer key and the question type is "textarea", give a 0.
+            If the response is an exact copy of the answer key, give a 0.
+            If the response is empty, just respond with 'response is empty'
             Do not take off points for grammar mistakes and misspelling.
             Respond in JSON: {"score": number, "feedback": string}`;
 
