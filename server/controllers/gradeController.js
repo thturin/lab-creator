@@ -3,7 +3,9 @@ require('dotenv').config();
 const OpenAI = require('openai');
 
 
-
+const calculateScore = async (req,res) =>{
+    
+}
 
 const gradeQuestion = async (req, res) => {
     const {userAnswer, answerKey, question, questionType} = req.body;
@@ -22,6 +24,7 @@ const gradeQuestion = async (req, res) => {
         Is the student's answer correct? Give a score from 0 to 1 and a brief feedback.
         The students are learning so it's best to give good feedback and be leniant on scoring.
         Do not take off points for grammar mistakes and misspelling.
+        Responses will be wrapped in React Quill. 
         Respond in JSON: {"score": number, "feedback": string}`;
         console.log(prompt);
 
