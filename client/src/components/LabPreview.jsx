@@ -5,6 +5,7 @@ import ReactQuill from 'react-quill';
 
 
 function LabPreview({ blocks, title}) {
+    console.log('LabPreview Mounted');
     const studentId = '1234';
     const [responses,setResponses]= useState({});
     const [gradedResults, setGradedResults]=useState({}); //object, not id
@@ -21,16 +22,16 @@ function LabPreview({ blocks, title}) {
     ];
     const calculateFinalScore = ()=>{
     //loop through allQuestions and return json
-    let finalScore = 0;
-    const details = allQuestions.map((q,i)=>{           
-        const score = gradedResults[q.id] ? parseFloat(gradedResults[q.id].score) :0;
-        //console.log(`score ${score} for ${q.id}`);
-        finalScore += score;
-        //console.log(finalScore);
-        return {
-            number:i+1,
-            score
-        }
+        let finalScore = 0;
+        const details = allQuestions.map((q,i)=>{           
+            const score = gradedResults[q.id] ? parseFloat(gradedResults[q.id].score) :0;
+            //console.log(`score ${score} for ${q.id}`);
+            finalScore += score;
+            //console.log(finalScore);
+            return {
+                number:i+1,
+                score
+            }
     });
     return {score:finalScore, details};
     // { finalResults
@@ -45,13 +46,18 @@ function LabPreview({ blocks, title}) {
         //extract responses, graded results and final score
         //ENSURE THIS HAPPENS BEFORE AUTOSAVE USE EFFECT
         const fetchSession = async()=>{
-            console.log('this first');
             try{
                     //console.log(`${process.env.REACT_APP_SERVER_HOST}/session/load-session/${title}`);
                     const response = await axios.get(`${process.env.REACT_APP_SERVER_HOST}/session/load-session/${title}`);
-                    setResponses(response.data.responses || responses);
-                    setGradedResults(response.data.gradedResults);
-                    setFinalResults(response.data.finalScore.totalScore);
+                    if(response.data.responses&& Object.keys((response.data.responses).length>0)) setResponses(response.data.responses);
+                       // Only set if gradedResults is not empty
+                    if (response.data.gradedResults && Object.keys(response.data.gradedResults).length > 0) {
+                        setGradedResults(response.data.gradedResults);
+                    }
+                    // Only set if finalScore exists
+                    if (response.data.finalScore && response.data.finalScore.totalScore !== undefined) {
+                        setFinalResults(response.data.finalScore.totalScore);
+                    }
                     setSessionLoaded(true);
                 }catch(err){
                     console.error('Error in getResponse()',err);
@@ -61,14 +67,12 @@ function LabPreview({ blocks, title}) {
     },[]);
 
     useEffect(()=>{ //useeffect cannot be async
-        console.log('this second'); 
         if(!title || !studentId || !sessionLoaded) return; //if not title was created or studentId is not found, don't update
        // if(sessionLoaded){ doesn't solve issue for race
             const session = createSession();
             session.labInfo.title = title;
             session.responses = responses;
             session.gradedResults = gradedResults;
-            const details = calculateFinalScore();
             const totalScore = details.score;
             //const totalScore = Object.values(gradedResults).reduce((prev,current)=>prev+parseFloat(current.score),0);
             const maxScore = allQuestions.length;
@@ -77,8 +81,7 @@ function LabPreview({ blocks, title}) {
             session.finalScore = {
                 totalScore,
                 maxScore,
-                percent:(totalScore/maxScore) * 100,
-                details:details.details 
+                percent:(totalScore/maxScore) * 100
             }
         // username and studentID are currently defaulted
 
@@ -94,6 +97,8 @@ function LabPreview({ blocks, title}) {
 
     const submitResponses = async () => {
         alert('Submitted!');
+        let newGradedResults = {...gradedResults};//create a new grade results to add empty
+
         for (const [questionId, userAnswer] of Object.entries(responses)) {
             //questionId is a string
             let answerKey='';
@@ -122,15 +127,14 @@ function LabPreview({ blocks, title}) {
                         }                       
                     }
             }
+
             try {
-                //console.log(`${process.env.REACT_APP_SERVER_HOST}/grade`);
                 const response = await axios.post(`${process.env.REACT_APP_SERVER_HOST}/grade`, {
                     userAnswer,
                     answerKey,
                     question,
                     questionType:type
                 });
-                //console.log("Grading results", response.data);
 
                 setGradedResults(prev=>({
                     ...prev, //copy all previous graded results
@@ -139,12 +143,31 @@ function LabPreview({ blocks, title}) {
                         feedback:response.data.feedback
                     }
                 }));
+         
+                allQuestions.forEach(q=>{
+                    //if new gradedResults does not contain this id,
+                    if(!newGradedResults[q.id]){
+                        newGradedResults[q.id]={
+                            score:0,
+                            feedback: "no response"
+                        }
+                    }
+                })
+                setGradedResults(newGradedResults);//
+
                 //   "123": { score: 1, feedback: "Good!" },
                 //   "456": { score: 0, feedback: "Try again." }    
             } catch (err) {
                 console.error("Error grading in LabPreview [LabPreview.jsx]");
             }
+
+            allQuestions.forEach(q=>{
+                
+            })
         }
+        // try{
+        //     const response = await axios.post(`${process.env.REACT_APP_SERVER_HOST}/session/load-session`)
+        // }
         setFinalResults(calculateFinalScore());
     }
 

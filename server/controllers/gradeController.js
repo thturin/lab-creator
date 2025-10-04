@@ -1,10 +1,36 @@
 const axios = require('axios');
 require('dotenv').config();
 const OpenAI = require('openai');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 
 const calculateScore = async (req,res) =>{
-    
+    const {gradedResults, labTitle} = req.body;
+    const studentId = '1234';
+    let maxPoints = gradedResults.length;
+    let totalPoints = 0;
+    gradedResults.forEach(q=>{
+        totalPoints+=q.score;
+    });
+    let percent = ((totalPoints/maxPoints)*100).toFixed(1);
+
+    const finalScore = {
+        percent,
+        maxScore: maxPoints,
+        totalScore: totalPoints
+    };
+
+    try {
+        const updatedSession = await prisma.session.update({
+            where: {labTitle_studentId: {labTitle, studentId}},
+            data: {finalScore}
+        });
+        return res.json({finalScore:updatedSession});
+    } catch(err) {
+        console.error('Error in calculateScore',err);
+        return res.status(500).json({error:'error calculating score'});
+    }
 }
 
 const gradeQuestion = async (req, res) => {
@@ -103,4 +129,4 @@ const gradeQuestionDeepSeek = async (req,res)=>{
 
 }
 
-module.exports = { gradeQuestion, gradeQuestionDeepSeek };
+module.exports = { gradeQuestion, gradeQuestionDeepSeek, calculateScore };
