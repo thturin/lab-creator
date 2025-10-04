@@ -5,6 +5,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 const saveSession = async(req,res)=>{
+    //console.log('saveSessions');
     const {labInfo,responses,gradedResults,finalScore} = req.body;
     const {title, username, studentId} = labInfo;
     if(!title || !studentId) return res.status(400).json({error:'Missing assignment title or Student Id'});

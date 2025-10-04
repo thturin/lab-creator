@@ -20,28 +20,8 @@ function LabPreview({ blocks, title}) {
     // const result = arr.flatMap(x => x);
     // console.log(result); // [1, 2, 3, 4]
     ];
-    const calculateFinalScore = ()=>{
-    //loop through allQuestions and return json
-        let finalScore = 0;
-        const details = allQuestions.map((q,i)=>{           
-            const score = gradedResults[q.id] ? parseFloat(gradedResults[q.id].score) :0;
-            //console.log(`score ${score} for ${q.id}`);
-            finalScore += score;
-            //console.log(finalScore);
-            return {
-                number:i+1,
-                score
-            }
-    });
-    return {score:finalScore, details};
-    // { finalResults
-    //     score: 12,
-    //     details: {
-    //                 number:1,
-    //                 score:0
-    //     }
-    // }
-    };
+
+    //LOAD SESSION
     useEffect(()=>{ //on  mount, load json 
         //extract responses, graded results and final score
         //ENSURE THIS HAPPENS BEFORE AUTOSAVE USE EFFECT
@@ -66,39 +46,29 @@ function LabPreview({ blocks, title}) {
     fetchSession();
     },[]);
 
+    //SAVE SESSION - save 
     useEffect(()=>{ //useeffect cannot be async
-        if(!title || !studentId || !sessionLoaded) return; //if not title was created or studentId is not found, don't update
+        console.log(title,studentId,sessionLoaded);
+        if(!title || !studentId) return; //if not title was created or studentId is not found, don't update
        // if(sessionLoaded){ doesn't solve issue for race
+       
             const session = createSession();
             session.labInfo.title = title;
             session.responses = responses;
             session.gradedResults = gradedResults;
-            const totalScore = details.score;
-            //const totalScore = Object.values(gradedResults).reduce((prev,current)=>prev+parseFloat(current.score),0);
-            const maxScore = allQuestions.length;
-            //update finalScore 
-            
-            session.finalScore = {
-                totalScore,
-                maxScore,
-                percent:(totalScore/maxScore) * 100
-            }
+    
         // username and studentID are currently defaulted
-
         //do not need await because we are not receving json
-            axios.post(`${process.env.REACT_APP_SERVER_HOST}/session/save-session`,session)
-            .catch(err=>{
-                console.log('save session error',err);
-            });
-
-        
- 
+        axios.post(`${process.env.REACT_APP_SERVER_HOST}/session/save-session`,session)
+        .catch(err=>{
+            console.log('save session error',err);
+        }); 
     },[responses,gradedResults,finalResults]);
 
     const submitResponses = async () => {
         alert('Submitted!');
         let newGradedResults = {...gradedResults};//create a new grade results to add empty
-
+        //LOOP THROUGH RESPONSES
         for (const [questionId, userAnswer] of Object.entries(responses)) {
             //questionId is a string
             let answerKey='';
@@ -106,7 +76,7 @@ function LabPreview({ blocks, title}) {
             let type='';
             //THIS ASSUMES SUB QUESTIONS DO NOT HAVE SUB QUESTIONS
             //LOOP THROUGH BLOCKS AND ASSIGN ANSWERKEY, QUESTIOHN, TYPE
-            for(const block of blocks){
+            for(const block of blocks){ //FIND BLOCK 
                 if (block.blockType === 'question' && 
                     block.subQuestions.length===0 &&
                     block.id===questionId){
@@ -115,7 +85,7 @@ function LabPreview({ blocks, title}) {
                         type=block.type;
                         break;
                 }
-                if(block.blockType==='question'&&
+                if(block.blockType==='question'&& //FIND SUBQUESTION BLOCK
                     block.subQuestions.length>0){
                         for(const sq of block.subQuestions){
                             if(sq.id===questionId){
@@ -135,16 +105,28 @@ function LabPreview({ blocks, title}) {
                     question,
                     questionType:type
                 });
-
-                setGradedResults(prev=>({
-                    ...prev, //copy all previous graded results
+                //UPDATED GRADEDRESULTS 
+                newGradedResults ={
+                    ...newGradedResults,
                     [questionId]: { //add or update current gradedResult with questionId
                         score: response.data.score,
                         feedback:response.data.feedback
-                    }
-                }));
-         
-                allQuestions.forEach(q=>{
+                    }              
+                }
+                // setGradedResults(prev=>({
+                //     ...prev, //copy all previous graded results
+                //     [questionId]: { //add or update current gradedResult with questionId
+                //         score: response.data.score,
+                //         feedback:response.data.feedback
+                //     }
+                // }));
+                //FOR QUESTIONS THAT WERE LEFT BLANK, CREATE A NEW OBJECT IN GRADEDRESULTS 
+                //WITH SCORE 0 AND NO RESPONSE
+            } catch (err) {
+                console.error("Error grading in LabPreview [LabPreview.jsx]");
+            }
+        }
+        allQuestions.forEach(q=>{
                     //if new gradedResults does not contain this id,
                     if(!newGradedResults[q.id]){
                         newGradedResults[q.id]={
@@ -152,23 +134,25 @@ function LabPreview({ blocks, title}) {
                             feedback: "no response"
                         }
                     }
-                })
-                setGradedResults(newGradedResults);//
-
-                //   "123": { score: 1, feedback: "Good!" },
-                //   "456": { score: 0, feedback: "Try again." }    
-            } catch (err) {
-                console.error("Error grading in LabPreview [LabPreview.jsx]");
-            }
-
-            allQuestions.forEach(q=>{
-                
-            })
-        }
+                });
+                setGradedResults(newGradedResults);
+                console.log(gradedResults);
+                //   "123": { score: 1, feedback: "Good!" },  
+        //CALCULATE FINAL SCORE 
         // try{
-        //     const response = await axios.post(`${process.env.REACT_APP_SERVER_HOST}/session/load-session`)
+        //     const response = await axios.post(`${process.env.REACT_APP_SERVER_HOST}/grade/calculate-score`,{
+        //         gradedResults,
+        //         title
+        //     });
+        //     setFinalResults(response.data.session.finalScore);
+        //     // {
+        //     //     "percent": null,
+        //     //     "maxScore": 0,
+        //     //     "totalScore": 0
+        //     // }
+        // }catch(err){
+        //     console.error('error calculating final score',err);
         // }
-        setFinalResults(calculateFinalScore());
     }
 
     return (
@@ -263,7 +247,9 @@ function LabPreview({ blocks, title}) {
             {gradedResults&& finalResults && (
                 <div className="mb-6 p-4 border rounded bg-blue-50">
                     <h3 className="font-bold mb-2">Score</h3>
-                        Total Score: {parseFloat(finalResults.score).toFixed(2)} / {finalResults.details?.length}
+                        Total Score: {parseFloat(finalResults.score).toFixed(2)} / {finalResults.maxScore} 
+                                        {finalResults.percent}
+
                 </div>
             )}
             </div>
@@ -271,5 +257,6 @@ function LabPreview({ blocks, title}) {
     
     )
 }
+
 
 export default LabPreview;

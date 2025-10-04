@@ -7,6 +7,9 @@ const prisma = new PrismaClient();
 
 const calculateScore = async (req,res) =>{
     const {gradedResults, labTitle} = req.body;
+    //console.log(gradedResults);
+    if(!gradedResults || !labTitle) return res.status(400).json({error:'gradedResults or labTitle is missing'});
+    
     const studentId = '1234';
     let maxPoints = gradedResults.length;
     let totalPoints = 0;
@@ -26,7 +29,7 @@ const calculateScore = async (req,res) =>{
             where: {labTitle_studentId: {labTitle, studentId}},
             data: {finalScore}
         });
-        return res.json({finalScore:updatedSession});
+        return res.json({session:updatedSession});
     } catch(err) {
         console.error('Error in calculateScore',err);
         return res.status(500).json({error:'error calculating score'});
@@ -35,7 +38,7 @@ const calculateScore = async (req,res) =>{
 
 const gradeQuestion = async (req, res) => {
     const {userAnswer, answerKey, question, questionType} = req.body;
-    console.log(userAnswer,answerKey,question);
+    //console.log(userAnswer,answerKey,question);
     if(!userAnswer || !answerKey){
         //might be a question with subquestions 
         return res.status(400).json({error:'No user response or answer key'});

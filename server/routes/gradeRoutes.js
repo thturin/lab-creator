@@ -5,7 +5,7 @@ const { gradeQuestion,gradeQuestionDeepSeek,calculateScore } = require('../contr
 
 //ROOT localhost:4000/api/grade
 router.post('', gradeQuestionDeepSeek);
-router.post('calculate-score',)
+router.post('/calculate-score',calculateScore);
 
 
 
