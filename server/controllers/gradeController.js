@@ -6,16 +6,19 @@ const prisma = new PrismaClient();
 
 
 const calculateScore = async (req,res) =>{
-    const {gradedResults, labTitle} = req.body;
-    //console.log(gradedResults);
-    if(!gradedResults || !labTitle) return res.status(400).json({error:'gradedResults or labTitle is missing'});
+    console.log('--------calculating score-----------');
+    const {gradedResults, title} = req.body;
+    //console.log(Array.isArray(gradedResults));
+    if(!gradedResults || !title) return res.status(400).json({error:'gradedResults or labTitle is missing'});
     
     const studentId = '1234';
-    let maxPoints = gradedResults.length;
+    let maxPoints = Object.keys(gradedResults).length;
     let totalPoints = 0;
-    gradedResults.forEach(q=>{
-        totalPoints+=q.score;
-    });
+
+    for( const key in gradedResults){
+        totalPoints+=gradedResults[key].score;
+    }
+ 
     let percent = ((totalPoints/maxPoints)*100).toFixed(1);
 
     const finalScore = {
@@ -23,12 +26,15 @@ const calculateScore = async (req,res) =>{
         maxScore: maxPoints,
         totalScore: totalPoints
     };
+    console.log(finalScore);
 
     try {
+        console.time('prismaUpdate');
         const updatedSession = await prisma.session.update({
-            where: {labTitle_studentId: {labTitle, studentId}},
+            where: {labTitle_studentId: {labTitle:title, studentId}},
             data: {finalScore}
         });
+        console.timeEnd('prismaUpdate');
         return res.json({session:updatedSession});
     } catch(err) {
         console.error('Error in calculateScore',err);
