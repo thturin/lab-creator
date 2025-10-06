@@ -7,6 +7,7 @@ const prisma = new PrismaClient();
 
 const calculateScore = async (req,res) =>{
     console.log('--------calculating score-----------');
+    console.time('calculateScore');
     const {gradedResults, title} = req.body;
     //console.log(Array.isArray(gradedResults));
     if(!gradedResults || !title) return res.status(400).json({error:'gradedResults or labTitle is missing'});
@@ -35,6 +36,8 @@ const calculateScore = async (req,res) =>{
             data: {finalScore}
         });
         console.timeEnd('prismaUpdate');
+        console.timeEnd('calculateScore');
+        console.log(updatedSession);
         return res.json({session:updatedSession});
     } catch(err) {
         console.error('Error in calculateScore',err);

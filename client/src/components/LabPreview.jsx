@@ -30,8 +30,8 @@ function LabPreview({ blocks, title}) {
         //ENSURE THIS HAPPENS BEFORE AUTOSAVE USE EFFECT
         const fetchSession = async()=>{
             try{
-                    //console.log(`${process.env.REACT_APP_SERVER_HOST}/session/load-session/${title}`);
                     const response = await axios.get(`${process.env.REACT_APP_SERVER_HOST}/session/load-session/${title}`);
+                    if (response.error) console.log(response.error);
                     if(response.data.responses&& Object.keys((response.data.responses).length>0)){
                         //console.log('LOAD RESPONSES', response.data.responses);
                         setResponses(response.data.responses);

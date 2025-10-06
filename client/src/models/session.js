@@ -12,8 +12,7 @@ export const createSession = ()=> (
         finalScore:{
             totalScore:0,
             maxScore:0,
-            percent:0,
-            details:[]
+            percent:0
         }
     }
 );
