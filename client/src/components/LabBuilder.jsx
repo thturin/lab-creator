@@ -6,8 +6,6 @@ import axios from "axios";
 import LabPreview from "./LabPreview";
 
 
-
-
 function QuestionEditor({ q, onQuestionChange, onQuestionDelete}) {
     //onChange passed down from the parent so everything stays in sync
   const update = (field, value) => {

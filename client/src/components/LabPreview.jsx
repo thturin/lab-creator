@@ -20,10 +20,6 @@ function LabPreview({ blocks, title}) {
     // console.log(result); // [1, 2, 3, 4]
     ];
 
-    // useEffect(()=>{
-    //     console.log('responses updated',responses);
-    // },[responses]);
-
     //LOAD SESSION
     useEffect(()=>{ //on  mount, load json 
         //extract responses, graded results and final score
@@ -32,17 +28,16 @@ function LabPreview({ blocks, title}) {
             try{
                     const response = await axios.get(`${process.env.REACT_APP_SERVER_HOST}/session/load-session/${title}`);
                     if (response.error) console.log(response.error);
-                    if(response.data.responses&& Object.keys((response.data.responses).length>0)){
-                        //console.log('LOAD RESPONSES', response.data.responses);
-                        setResponses(response.data.responses);
+                    if(response.data.session.responses&& Object.keys((response.data.session.responses).length>0)){
+                        setResponses(response.data.session.responses);
                     } 
                        // Only set if gradedResults is not empty
-                    if (response.data.gradedResults && Object.keys(response.data.gradedResults).length > 0) {
-                        setGradedResults(response.data.gradedResults);
+                    if (response.data.session.gradedResults && Object.keys(response.data.session.gradedResults).length > 0) {
+                        setGradedResults(response.data.session.gradedResults);
                     }
                     // Only set if finalScore exists
-                    if (response.data.finalScore && response.data.finalScore.totalScore !== undefined) {
-                        setFinalResults(response.data.finalScore.totalScore);
+                    if (response.data.session.finalScore && response.data.session.finalScore.totalScore !== undefined) {
+                        setFinalResults(response.data.session.finalScore.totalScore);
                     }
                     setSessionLoaded(true);
                 }catch(err){
@@ -50,17 +45,13 @@ function LabPreview({ blocks, title}) {
                 };
         } 
     fetchSession();
-    },[title]);
+    },[]);
 
     //SAVE SESSION - save 
     useEffect(()=>{ //useeffect cannot be async
-        //console.log(title,studentId,sessionLoaded);
         if(!title || !studentId || !sessionLoaded) return; //if not title was created or studentId is not found, don't update
-       // if(sessionLoaded){ doesn't solve issue for race
-       
             const session = createSession();
             session.labInfo.title = title;
-            //SOMETIMES RESPONSES IS EMPTY (DON'T KNOW WHY) 
             if(responses) session.responses = responses;
             session.gradedResults = gradedResults;
     
@@ -182,23 +173,52 @@ function LabPreview({ blocks, title}) {
                                 dangerouslySetInnerHTML={{ __html: block.content }} />
                         </>
                     ) : (  //   QUESITON TYPE
-                        <>
-                            <div>
-                                <div className="font-semibold mb-1" dangerouslySetInnerHTML={{ __html: block.prompt }} />
-                                {/* <div className="mb-2 text-gray-700" dangerouslySetInnerHTML={{ __html: block.desc }} /> */}
-                                {block.subQuestions.length === 0 && (
-                                    <>
-                                        <ReactQuill
-                                            value={responses[block.id] || ""}
-                                            onChange={value => setResponses({ ...responses, [block.id]: value })}
-                                            className="w-full mb-2"
-                                            placeholder="Your answer..."
-                                        />
-                                       
-                                        {finalResults &&  (gradedResults[block.id] ? (
+                    <>
+                        <div>
+                            <div className="font-semibold mb-1" dangerouslySetInnerHTML={{ __html: block.prompt }} />
+                            {/* <div className="mb-2 text-gray-700" dangerouslySetInnerHTML={{ __html: block.desc }} /> */}
+                            {block.subQuestions.length === 0 && (
+                                <>
+                                    <ReactQuill
+                                        value={responses[block.id] || ""}
+                                        onChange={value => setResponses({ ...responses, [block.id]: value })}
+                                        className="w-full mb-2"
+                                        placeholder="Your answer..."
+                                    />
+                                    
+                                    {finalResults &&  (gradedResults[block.id] ? (
+                                        <div className="mt-2 p-2 bg-green-50 border rounded text-sm">
+                                            <div><strong>Score:</strong> {gradedResults[block.id].score}</div>
+                                            <div><strong>Feedback:</strong> {gradedResults[block.id].feedback}</div>
+                                        </div>
+                                    ):(
+                                        <div className="mt-2 p-2 bg-green-50 border rounded text-sm">
+                                            <div><strong>Score:</strong> 0</div>
+                                            <div><strong>Feedback:</strong> no response</div>
+                                        </div>
+                                    ))}
+
+                                </>
+                            )
+                            }
+                        </div>
+                        {block.subQuestions && block.subQuestions.length > 0 && (
+                            <div className="ml-4 border-l-2 pl-2">
+                                {block.subQuestions.map((sq, j) => (
+                                    <div key={sq.id || j} className="mb-4">
+                                        <div className="font-semibold mb-1" dangerouslySetInnerHTML={{ __html: sq.prompt }} />
+                                        {/* <div className="mb-2 text-gray-700" dangerouslySetInnerHTML={{ __html: block.desc }} /> */}
+                                            <ReactQuill
+                                                value={responses[sq.id] || ""}
+                                                onChange={value => setResponses({ ...responses, [sq.id]: value })}
+                                                className="w-full mb-2"
+                                                placeholder="Your answer..."
+                                            />
+
+                                        {finalResults && (gradedResults[sq.id] ? (
                                             <div className="mt-2 p-2 bg-green-50 border rounded text-sm">
-                                                <div><strong>Score:</strong> {gradedResults[block.id].score}</div>
-                                                <div><strong>Feedback:</strong> {gradedResults[block.id].feedback}</div>
+                                                <div><strong>Score:</strong> {gradedResults[sq.id].score}</div>
+                                                <div><strong>Feedback:</strong> {gradedResults[sq.id].feedback}</div>
                                             </div>
                                         ):(
                                             <div className="mt-2 p-2 bg-green-50 border rounded text-sm">
@@ -206,40 +226,11 @@ function LabPreview({ blocks, title}) {
                                                 <div><strong>Feedback:</strong> no response</div>
                                             </div>
                                         ))}
-
-                                    </>
-                                )
-                                }
+                                    </div>
+                                ))}
                             </div>
-                            {block.subQuestions && block.subQuestions.length > 0 && (
-                                <div className="ml-4 border-l-2 pl-2">
-                                    {block.subQuestions.map((sq, j) => (
-                                        <div key={sq.id || j} className="mb-4">
-                                            <div className="font-semibold mb-1" dangerouslySetInnerHTML={{ __html: sq.prompt }} />
-                                            {/* <div className="mb-2 text-gray-700" dangerouslySetInnerHTML={{ __html: block.desc }} /> */}
-                                                <ReactQuill
-                                                    value={responses[sq.id] || ""}
-                                                    onChange={value => setResponses({ ...responses, [sq.id]: value })}
-                                                    className="w-full mb-2"
-                                                    placeholder="Your answer..."
-                                                />
-
-                                            {finalResults && (gradedResults[sq.id] ? (
-                                                <div className="mt-2 p-2 bg-green-50 border rounded text-sm">
-                                                    <div><strong>Score:</strong> {gradedResults[sq.id].score}</div>
-                                                    <div><strong>Feedback:</strong> {gradedResults[sq.id].feedback}</div>
-                                                </div>
-                                            ):(
-                                                <div className="mt-2 p-2 bg-green-50 border rounded text-sm">
-                                                    <div><strong>Score:</strong> 0</div>
-                                                    <div><strong>Feedback:</strong> no response</div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </>
+                        )}
+                    </>
                     )}
                 </div>
             ))}

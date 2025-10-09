@@ -16,7 +16,7 @@ const saveSession = async(req,res)=>{
             update: {responses,gradedResults,finalScore},
             create: {labTitle:title, username, studentId, responses,gradedResults,finalScore}
         });
-        console.log('session in saveSession',session);
+        console.log('saveSession--->',session);
         res.json({message: 'Session Saved',session});
     }catch(err){
         console.error('Error in saveSession()->',err);
@@ -44,11 +44,14 @@ const loadSession = async(req,res)=>{
         const session = await prisma.session.findUnique({
             where:{labTitle_studentId: {labTitle:title,studentId}}
         });
+        console.log('loadSession--->',session);
         if(!session){
+            console.log('No session found, creating new one');
             const newSession = await prisma.session.create({
                 data:{
                     labTitle:title,
                     studentId,
+                    username:'stud',
                     responses:{},
                     gradedResults:{},
                     gradedResults:{},
@@ -57,7 +60,7 @@ const loadSession = async(req,res)=>{
             });
             return res.json({session:newSession});
         }
-        //console.log(JSON.stringify(session));
+        console.log(JSON.stringify(session));
         res.json({session});
     }catch(err){
         console.error('Error in getSession()->',err);
