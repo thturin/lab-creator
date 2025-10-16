@@ -12,6 +12,7 @@ function LabPreview({ blocks, title }) {
     const [gradedResults, setGradedResults] = useState({}); //object, not id
     const [finalResults, setFinalResults] = useState();
     const [sessionLoaded, setSessionLoaded] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const allQuestions = [
         //filter questions without subquestions
         ...blocks.filter(b => b.blockType === "question" && (!b.subQuestions || b.subQuestions.length === 0))
@@ -23,14 +24,14 @@ function LabPreview({ blocks, title }) {
     ];
 
     useEffect(() => { // console.log() happens faster than fetchSession() use this to track values
-    if (sessionLoaded) {
-        console.log('State updated:', {
-            responses,
-            finalResults,
-            gradedResults
-        });
-    }
-}, [responses, finalResults, gradedResults, sessionLoaded]);
+        if (sessionLoaded) {
+            console.log('State updated:', {
+                responses,
+                finalResults,
+                gradedResults
+            });
+        }
+    }, [responses, finalResults, gradedResults, sessionLoaded]);
 
     //LOAD SESSION
     useEffect(() => { //on  mount, load json 
@@ -85,7 +86,7 @@ function LabPreview({ blocks, title }) {
 
 
     const submitResponses = async () => {
-        alert('Submitted!');
+        setIsSubmitting(true);
         let newGradedResults = { ...gradedResults };//create a new grade results to add empty
         //LOOP THROUGH RESPONSES
         for (const [questionId, userAnswer] of Object.entries(responses)) {
@@ -132,17 +133,9 @@ function LabPreview({ blocks, title }) {
                         feedback: response.data.feedback
                     }
                 }
-                // setGradedResults(prev=>({
-                //     ...prev, //copy all previous graded results
-                //     [questionId]: { //add or update current gradedResult with questionId
-                //         score: response.data.score,
-                //         feedback:response.data.feedback
-                //     }
-                // }));
-
             } catch (err) {
                 console.error("Error grading in LabPreview [LabPreview.jsx]");
-            }
+            } 
         } //END OF FOR LOOP
         //FOR QUESTIONS THAT WERE LEFT BLANK, CREATE A NEW OBJECT IN GRADEDRESULTS 
         //WITH SCORE 0 AND NO RESPONSE
@@ -159,11 +152,9 @@ function LabPreview({ blocks, title }) {
         //useStates are inherintley async. We don't want to wait on setGradedResults 
         //to update. If it doesn't update before grade/calculate-score call, it will cause an issue
         setGradedResults(newGradedResults);
-        console.log(gradedResults);
         //   "123": { score: 1, feedback: "Good!" },  
         //CALCULATE FINAL SCORE 
         try {
-            //console.log(gradedResults,title);
             const response = await axios.post(`${process.env.REACT_APP_SERVER_HOST}/grade/calculate-score`, {
                 gradedResults: newGradedResults, //use variable instead
                 title
@@ -177,7 +168,9 @@ function LabPreview({ blocks, title }) {
             // }
         } catch (err) {
             console.error('error calculating final score', err);
-        }
+        }finally {
+                setIsSubmitting(false); //stop loading regardless of success/failure
+            }
     }
 
     return (
@@ -190,34 +183,44 @@ function LabPreview({ blocks, title }) {
                 <div>
                     <h3 className="font-semibold mb-2">{title}</h3>
                 </div>
-    {/* LIST BLOCKS AND DISPLAY */}
+                {/* LIST BLOCKS AND DISPLAY */}
                 {blocks.map((block, i) => (
                     <div key={block.id || i} className="mb-6">
 
-                {/* DISPLAY A MATERIAL */}
+                        {/* DISPLAY A MATERIAL */}
                         {block.blockType === "material" ? (
-                                <MaterialBlock content={block.content} />
-                        ) : (  
-                // DISPLAY A QUESTION OR SUBQUESTION
-                                <QuestionBlock  
-                                    block={block}
-                                    setResponses={setResponses}
-                                    responses={responses}
-                                    gradedResults={gradedResults} 
-                                    finalResults={finalResults}
-                                />
+                            <MaterialBlock content={block.content} />
+                        ) : (
+                            // DISPLAY A QUESTION OR SUBQUESTION
+                            <QuestionBlock
+                                block={block}
+                                setResponses={setResponses}
+                                responses={responses}
+                                gradedResults={gradedResults}
+                                finalResults={finalResults}
+                            />
                         )}
                     </div>
                 ))}
                 <button
-                    onClick={() => {
-                        submitResponses();
-                    }}
-                    className="bg-purple-600 text-white px-4 py-2 rounded mt-4"
+                    onClick={submitResponses}
+                    disabled={isSubmitting}
+                    className={`bg-purple-600 text-white px-4 py-2 rounded mt-4 flex items-center ${isSubmitting ? 'opacity-75 cursor-not-allowed' : ''
+                        }`}
                 >
-                    Submit
+                    {isSubmitting ? (
+                        <>
+                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Submitting...
+                        </>
+                    ) : (
+                        'Submit'
+                    )}
                 </button>
-    {/*OUTPUT FINAL SCORE */}
+                {/*OUTPUT FINAL SCORE */}
                 {gradedResults && finalResults && (
                     <div className="mb-6 p-4 border rounded bg-blue-50">
                         <h3 className="font-bold mb-2">Score</h3>

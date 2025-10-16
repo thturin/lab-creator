@@ -59,12 +59,13 @@ const gradeQuestion = async (req, res) => {
         Student Answer: ${userAnswer}
         Question: ${question}
         Question Type: ${questionType}
-        Is the student's answer correct? Give a score from 0 to 1 and a brief feedback.
+        Is the student's answer correct? Give a score from 0, 0.5 or 1 and a brief feedback.
         The students are learning so it's best to give good feedback and be leniant on scoring.
-        Do not take off points for grammar mistakes and misspelling.
+        Do not take deduct points for grammar mistakes and misspelling.
+        If their response is similar to the answer key, do not take points off. 
         Responses will be wrapped in React Quill. 
         Respond in JSON: {"score": number, "feedback": string}`;
-        console.log(prompt);
+        //console.log(prompt);
 
         const response = await axios.post(
             "https://api.openai.com/v1/chat/completions",
