@@ -13,6 +13,7 @@ function LabPreview({ blocks, title }) {
     const [finalResults, setFinalResults] = useState();
     const [sessionLoaded, setSessionLoaded] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    
     const allQuestions = [
         //filter questions without subquestions
         ...blocks.filter(b => b.blockType === "question" && (!b.subQuestions || b.subQuestions.length === 0))
