@@ -2,8 +2,7 @@ import { useState, useRef } from "react";
 import {createQuestion, createMaterial} from "../models/block";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-import axios from "axios";
-import LabPreview from "./LabPreview";
+
 
 
 function QuestionEditor({ q, onQuestionChange, onQuestionDelete}) {
@@ -226,6 +225,8 @@ function LabBuilder({blocks, setBlocks, title, setTitle}){
 
     const saveLab = () => {
         const lab = { title: title, blocks};
+
+        
         localStorage.setItem("labData", JSON.stringify(lab));
         console.log("Lab JSON:", lab);
         //alert("Lab saved! Check console for JSON.");

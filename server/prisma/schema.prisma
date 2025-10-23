@@ -20,3 +20,11 @@ model Session {
   createdAt     DateTime @default(now())
   @@unique([labTitle, studentId]) 
 }
+
+model Lab {
+  id           Int        @id @default(autoincrement())
+  title        String
+  blocks       Json
+  createdAt    DateTime   @default(now())
+  assignmentId Int
+}
