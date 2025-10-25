@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import {createQuestion, createMaterial} from "../models/block";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-
+import axios from "axios";
 
 
 function QuestionEditor({ q, onQuestionChange, onQuestionDelete}) {
@@ -160,20 +160,10 @@ function MaterialEditor({block, onMaterialChange, onMaterialDelete}){
                 }}
                 modules={modules}
             />
-            {/* Render images above Markdown preview */}
-            {/* {block.images && block.images.length > 0 && (
-                <div className="my-2 flex flex-wrap gap-2">
-                    {block.images.map((src, idx) => (
-                        <img key={idx} src={src} alt={`Pasted ${idx}`} style={{maxWidth: "100%"}} />
-                    ))}
-                </div>
-            )} */}
 
             <div className="mt-2 p-2 border bg-gray-50"
                  dangerouslySetInnerHTML={{ __html: block.content }} />
-            
-            
-       
+
             <button
             onClick={onMaterialDelete}
             className="bg-red-600 text-white px-2 py-1 rounded ml-2"
@@ -199,7 +189,6 @@ function LabBuilder({blocks, setBlocks, title, setTitle}){
     }
 
     const addQuestionBlock = () => {
-
         setBlocks([
         ...blocks,
         createQuestion()
@@ -223,12 +212,13 @@ function LabBuilder({blocks, setBlocks, title, setTitle}){
         setBlocks(updatedBlocks);
     }
 
-    const saveLab = () => {
-        const lab = { title: title, blocks};
-
+    const saveLab = async () => {
+        //STATIC ASSIGNMENTID FOR NOW
+        const lab = { title: title, blocks, assignmentId:'1', session:[]};
+        const response = await axios.get(`${process.env.REACT_APP_SERVER_HOST}/lab/upsert-lab`);
         
-        localStorage.setItem("labData", JSON.stringify(lab));
-        console.log("Lab JSON:", lab);
+        // localStorage.setItem("labData", JSON.stringify(lab));
+        // console.log("Lab JSON:", lab);
         //alert("Lab saved! Check console for JSON.");
     };
 
