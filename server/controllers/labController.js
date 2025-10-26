@@ -19,7 +19,7 @@ const loadLab = async(req,res)=>{
 const getLabs = async (req,res)=>{
     try{
 
-        const labs = prisma.lab.findMany();
+        const labs =  await prisma.lab.findMany();
         res.json(labs);
     }catch(err){
         console.error('Error in labController getLabs()',err);
@@ -28,11 +28,13 @@ const getLabs = async (req,res)=>{
 };
 
 const upsertLab = async(req,res)=>{
-    try{
-        const {title, blocks,assignmentId,session} = req.body;
 
-        const lab = prisma.lab.upsert({
-            where:{title},
+    try{
+        const {title, blocks,assignmentId,sessions} = req.body;
+        //console.log(title, blocks);
+
+        const lab = await prisma.lab.upsert({
+            where:{assignmentId},
             update:{
                 title,
                 blocks
@@ -41,10 +43,11 @@ const upsertLab = async(req,res)=>{
                 title,
                 blocks,
                 assignmentId,
-                session
+                sessions:{create: []}
             }
         });
         console.log('lab created or saved: ',lab);
+        return res.json(lab); //return the lab
     }catch(err){
         console.error('Error in labController upsertLab()',err);
         res.status(500).json({error:'Could not create or save lab'});

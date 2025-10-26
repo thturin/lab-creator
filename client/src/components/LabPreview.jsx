@@ -34,6 +34,17 @@ function LabPreview({ blocks, title }) {
         }
     }, [responses, finalResults, gradedResults, sessionLoaded]);
 
+    //LOAD LAB
+    useEffect(()=>{
+        const fetchLab  = async()=>{
+            try{
+                const response = await axios.get(`${process.env.REACT_APP_SERVER_HOST}/lab/load-lab/${title}`);
+            }catch(err){
+
+            }
+        }
+    })
+
     //LOAD SESSION
     useEffect(() => { //on  mount, load json 
         //extract responses, graded results and final score

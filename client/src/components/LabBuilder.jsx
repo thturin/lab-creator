@@ -214,9 +214,10 @@ function LabBuilder({blocks, setBlocks, title, setTitle}){
 
     const saveLab = async () => {
         //STATIC ASSIGNMENTID FOR NOW
-        const lab = { title: title, blocks, assignmentId:'1', session:[]};
-        const response = await axios.get(`${process.env.REACT_APP_SERVER_HOST}/lab/upsert-lab`);
-        
+        const lab = { title: title, blocks, assignmentId:1};
+       // console.log(lab);
+        const response = await axios.post(`${process.env.REACT_APP_SERVER_HOST}/lab/upsert-lab`,lab);
+        console.log('Lab saved: ', response.data);
         // localStorage.setItem("labData", JSON.stringify(lab));
         // console.log("Lab JSON:", lab);
         //alert("Lab saved! Check console for JSON.");
