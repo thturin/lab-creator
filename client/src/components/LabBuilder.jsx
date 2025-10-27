@@ -1,8 +1,10 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {createQuestion, createMaterial} from "../models/block";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import axios from "axios";
+
+//useRef allows you to store, access, and mutate variables between renders without re-rendering
 
 
 function QuestionEditor({ q, onQuestionChange, onQuestionDelete}) {
@@ -175,6 +177,20 @@ function MaterialEditor({block, onMaterialChange, onMaterialDelete}){
 }
 
 function LabBuilder({blocks, setBlocks, title, setTitle}){
+    useEffect(()=>{
+        const handleMessage = (event) => {
+            if(event.data?.type === 'SET_TITLE' && typeof event.data.title === 'string'){
+                console.log('HI LOOK HERE');
+                setTitle(event.data.title);//useState setTitle() is async so use value directly into loadLab
+                loadLab(event.data.title);
+            }
+        };
+        window.addEventListener('message',handleMessage);
+            // Cleanup on unmount
+        return () => {
+            window.removeEventListener('message', handleMessage);
+        };
+    },[setTitle]);
 
     const deleteBlock = (id) =>{
         setBlocks(blocks.filter(b=> b.id !== id)); //remove block with id
@@ -223,16 +239,20 @@ function LabBuilder({blocks, setBlocks, title, setTitle}){
         //alert("Lab saved! Check console for JSON.");
     };
 
-    const loadLab = async()=>{
-        try{
-            
-            const lab = await import('../lab-tests/U1T6.json');
-            setTitle(lab.default.title || "");
-            setBlocks(lab.default.blocks || []);
-            console.log('Lab loaded from lab.json');
+    const loadLab = async(labTitle=title)=>{
 
+        try{
+            const response = axios.get(`${process.env.REACT_APP_SERVER_HOST}/lab/load-lab`,{
+                title:labTitle
+            });
+            // const lab = await import('../lab-tests/U1T6.json');
+            // setTitle(lab.default.title || "");
+            // setBlocks(lab.default.blocks || []);
+            // console.log('Lab loaded from lab.json');
+            setTitle(response.data.title);
+            setBlocks(response.data.blocks);
         }catch(err){
-            console.error('Lab did not load from file successfully',err.message);
+            console.error('Lab did not load from labController successfully',err.message);
         }
       
 

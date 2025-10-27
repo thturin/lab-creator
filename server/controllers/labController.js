@@ -6,10 +6,11 @@ const prisma = new PrismaClient();
 
 const loadLab = async(req,res)=>{
     try{
-        const {title} = req.params; //searching lab by title which probably isn't the best 
+        const {title} = req.body; //searching lab by title which probably isn't the best 
         const lab = await prisma.lab.findUnique({
             where: { title }
         });
+        return res.json(lab);
     }catch(err){
         console.error('Error in labController loabLab()',err);
         res.status(500).json({error:'Could not get lab'});
