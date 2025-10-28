@@ -177,7 +177,9 @@ function MaterialEditor({ block, onMaterialChange, onMaterialDelete }) {
 }
 
 function LabBuilder({ blocks, setBlocks, title, setTitle }) {
+    //data received from iframe
     const [assignmentId, setAssignmentId] = useState(null);
+    const [id,setId] = useState(null);
 
     //if the handleMessage is not being triggered by the setAssignmentId, then why are we using a useEffect??
     //Set up the listener once when the component mounts (so it’s ready to receive messages).
@@ -188,9 +190,10 @@ function LabBuilder({ blocks, setBlocks, title, setTitle }) {
         // The iframe (LabBuilder) listens for this message and updates its state accordingly.
         const handleMessage = (event) => {
             //when printing out event.data.AsssignmentId, it can be undefined due to hot reloading
-            if (event.data?.type === 'SET_ASSIGNMENTID' && event.data.assignmentId) {
+            if (event.data?.type === 'SET_ASSIGNMENT' && event.data.assignmentId && event.data.title) {
                 setAssignmentId(event.data.assignmentId);
-                loadLab(event.data.assignmentId);
+                setTitle(event.data.title);
+                loadLab(event.data.assignmentId, event.data.title);
             }
         };
         window.addEventListener('message', handleMessage);
@@ -237,8 +240,7 @@ function LabBuilder({ blocks, setBlocks, title, setTitle }) {
     }
 
     const saveLab = async () => {
-        //STATIC ASSIGNMENTID FOR NOW
-        const lab = { title: title, blocks, assignmentId: 1 };
+        const lab = { title: title, blocks, assignmentId};
         // console.log(lab);
         const response = await axios.post(`${process.env.REACT_APP_SERVER_HOST}/lab/upsert-lab`, lab);
         console.log('Lab saved: ', response.data);
@@ -247,25 +249,22 @@ function LabBuilder({ blocks, setBlocks, title, setTitle }) {
         //alert("Lab saved! Check console for JSON.");
     };
 
-    const loadLab = async (id = assignmentId) => {
+    const loadLab = async (id = assignmentId, labTitle = title) => {
 
         try {
-            console.log('here is the assignmentID', id);
-
             const response = await axios.get(`${process.env.REACT_APP_SERVER_HOST}/lab/load-lab`, {
-                params: { assignmentId: id, title }
+                params: { assignmentId: id, title:labTitle }
             });
             // const lab = await import('../lab-tests/U1T6.json');
             // setTitle(lab.default.title || "");
             // setBlocks(lab.default.blocks || []);
             // console.log('Lab loaded from lab.json');
-            setTitle(response.data.title);
+            //setTitle(response.data.title);
             setBlocks(response.data.blocks);
+            setId(response.data.id);
         } catch (err) {
             console.error('Lab did not load from labController successfully', err.message);
         }
-
-
     }
 
     const exportLabToFolder = () => {

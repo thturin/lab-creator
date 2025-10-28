@@ -6,7 +6,7 @@ import LabBuilder from './components/LabBuilder';
 import LabPreview from './components/LabPreview';
 
 function App() {
-  const [title, setTitle] = useState('Untitled lab');
+  const [title, setTitle] = useState('empty');
   const [blocks, setBlocks] = useState([]);
   return (
     <StrictMode>

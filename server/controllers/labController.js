@@ -13,10 +13,11 @@ const loadLab = async(req,res)=>{
             where: { assignmentId:Number(assignmentId) },
         });
         if(!lab){ //lab doesn't exist, create a new one 
+            console.log('create new lab');
             lab = await prisma.lab.create({
                 data:{
-                    title: title || 'Untitled Lab',
-                    blocks:{},
+                    title: title,
+                    blocks:[],
                     assignmentId:Number(assignmentId),
                     sessions:{create:[]}
                 }
@@ -44,13 +45,14 @@ const getLabs = async (req,res)=>{
 };
 
 const upsertLab = async(req,res)=>{
-
+    //THIS ASSUMES 1:1 LAB: ASSIGNMENT. we avoid relying on database-genrasted IDs for upsert logic
+    //one lab per assignment
     try{
-        const {title, blocks,assignmentId,sessions} = req.body;
+        const {title, blocks,assignmentId} = req.body;
         //console.log(title, blocks);
 
         const lab = await prisma.lab.upsert({
-            where:{assignmentId},
+            where:{assignmentId:Number(assignmentId)},
             update:{
                 title,
                 blocks
@@ -58,7 +60,7 @@ const upsertLab = async(req,res)=>{
             create:{
                 title,
                 blocks,
-                assignmentId,
+                assignmentId:Number(assignmentId),
                 sessions:{create: []}
             }
         });
