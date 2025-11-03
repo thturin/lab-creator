@@ -35,29 +35,28 @@ const getSessions = async (req, res)=>{
 }
 
 const loadSession = async(req,res)=>{
-    const {title} = req.params;
-    //const {studentId} = req.body;
-    const studentId = '1234';
-    //console.log(title);
-    if(!title || !studentId) return res.status(400).json({error: 'Missing lab title or Student Id'});
+    const {labTitle} = req.params;
+    const {username, userId} = req.body;
+    //if(!studentId) return res.status(400).json({error: 'Missing lab title or Student Id'});
     try{
         const session = await prisma.session.findUnique({
-            where:{labTitle_studentId: {labTitle:title,studentId}}
+            where:{labTitle_studentId: {labTitle,userId}}
         });
         console.log('loadSession--->',session);
         if(!session){
             console.log('No session found, creating new one');
             const newSession = await prisma.session.create({
                 data:{
-                    labTitle:title,
-                    studentId,
-                    username:'stud',
+                    labTitle,
+                    userId,
+                    username,
                     responses:{},
                     gradedResults:{},
                     gradedResults:{},
                     finalScore:{}
                 }
             });
+            console.log('Created New Session', JSON.stringify(newSession));
             return res.json({session:newSession});
         }
         console.log(JSON.stringify(session));

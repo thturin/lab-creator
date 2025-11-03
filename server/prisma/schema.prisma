@@ -38,3 +38,4 @@ model Lab {
   assignmentId Int        @unique
   sessions     Session[]
 }
+
