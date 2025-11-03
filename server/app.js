@@ -14,7 +14,11 @@ app.use(cors({
      process.env.CLIENT_URL, // e.g., http://localhost:13000 for local dev
     'http://lab-creator-client:3001', // Docker Compose service name for frontend
    'http://localhost:13001', // Docker Compose service name for frontend
-    'http://0.0.0.0:13001'
+    'http://0.0.0.0:13001',
+    'http://portal-client:3000',
+    'http://localhost:13000',
+    'http://0.0.0.0:13000'
+
   ],
   credentials:true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],

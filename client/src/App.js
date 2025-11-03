@@ -27,7 +27,9 @@ function App() {
             path="/preview"
             element={<LabPreview
               title={title}
+              setTitle={setTitle}
               blocks={blocks}
+              setBlocks={setBlocks}
             />}
           />
           <Route

@@ -5,9 +5,8 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 const loadLab = async(req,res)=>{
-
     try{
-        const {assignmentId, title} = req.query; //searching lab by title which probably isn't the best 
+        const {assignmentId, title} = req.query; 
         console.log('here are the params',assignmentId, title);
         let lab = await prisma.lab.findUnique({
             where: { assignmentId:Number(assignmentId) },
@@ -24,9 +23,7 @@ const loadLab = async(req,res)=>{
             })
             console.log('created new empty lab',lab);
         }
-        
         return res.json(lab);
-
     }catch(err){
         console.error('Error in labController loabLab()',err);
         res.status(500).json({error:'Could not get lab'});
@@ -49,8 +46,7 @@ const upsertLab = async(req,res)=>{
     //one lab per assignment
     try{
         const {title, blocks,assignmentId} = req.body;
-        //console.log(title, blocks);
-
+  
         const lab = await prisma.lab.upsert({
             where:{assignmentId:Number(assignmentId)},
             update:{

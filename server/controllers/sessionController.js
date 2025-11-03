@@ -7,14 +7,14 @@ const prisma = new PrismaClient();
 const saveSession = async(req,res)=>{
 
     const {labInfo,responses,gradedResults,finalScore} = req.body;
-    const {title, username, studentId} = labInfo;
-    if(!title || !studentId) return res.status(400).json({error:'Missing assignment title or Student Id'});
+    const {title, username, userId,} = labInfo;
+    if(!title || !userId) return res.status(400).json({error:'Missing assignment title or Student Id'});
     try{
         //upsert updates if session exists, or create if it does not
         const session = await prisma.session.upsert({
-            where: {labTitle_studentId: {labTitle:title,studentId}},
+            where: {labTitle_userId: {labTitle:title,userId}},
             update: {responses,gradedResults,finalScore},
-            create: {labTitle:title, username, studentId, responses,gradedResults,finalScore}
+            create: {labTitle:title, username, userId, responses,gradedResults,finalScore}
         });
         console.log('saveSession--->',session);
         res.json({message: 'Session Saved',session});

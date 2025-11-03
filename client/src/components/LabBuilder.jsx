@@ -198,10 +198,9 @@ function LabBuilder({ blocks, setBlocks, title, setTitle }) {
         };
         window.addEventListener('message', handleMessage);
         // Cleanup on unmount
-        return () => {
-            window.removeEventListener('message', handleMessage);
-        };
-    }, [setAssignmentId]);
+        return () =>  window.removeEventListener('message', handleMessage);
+        
+    }, [setAssignmentId ]);
 
     const deleteBlock = (id) => {
         setBlocks(blocks.filter(b => b.id !== id)); //remove block with id
@@ -252,16 +251,13 @@ function LabBuilder({ blocks, setBlocks, title, setTitle }) {
     const loadLab = async (id = assignmentId, labTitle = title) => {
 
         try {
-            const response = await axios.get(`${process.env.REACT_APP_SERVER_HOST}/lab/load-lab`, {
-                params: { assignmentId: id, title:labTitle }
-            });
-            // const lab = await import('../lab-tests/U1T6.json');
-            // setTitle(lab.default.title || "");
-            // setBlocks(lab.default.blocks || []);
-            // console.log('Lab loaded from lab.json');
-            //setTitle(response.data.title);
-            setBlocks(response.data.blocks);
-            setId(response.data.id);
+  
+            const lab = await import('../lab-tests/U1T6.json');
+            setTitle(lab.default.title || "");
+            setBlocks(lab.default.blocks || []);
+            console.log('Lab loaded from lab.json');
+    
+         
         } catch (err) {
             console.error('Lab did not load from labController successfully', err.message);
         }

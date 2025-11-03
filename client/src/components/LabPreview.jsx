@@ -6,13 +6,41 @@ import QuestionBlock from './lab-preview/QuestionBlock';
 
 
 
-function LabPreview({ blocks, title }) {
+function LabPreview({ blocks, setBlocks, title, setTitle }) {
     const studentId = '1234';
     const [responses, setResponses] = useState({});
     const [gradedResults, setGradedResults] = useState({}); //object, not id
     const [finalResults, setFinalResults] = useState();
     const [sessionLoaded, setSessionLoaded] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    //data received from ifrmae (dom)
+    const [assignmentId, setAssignmentId] = useState(null);
+    const [labId, setId] = useState(null);
+
+    //if the handleMessage is not being triggered by the setAssignmentId, then why are we using a useEffect??
+    //Set up the listener once when the component mounts (so it’s ready to receive messages).
+    // Clean up the listener when the component unmounts (to avoid memory leaks or duplicate listeners).
+    useEffect(() => {
+        // setAssignmentId is called inside the message handler, which is triggered by messages sent from the parent window.
+        // The parent sends the assignment ID via postMessage when the user selects an assignment.
+        // The iframe (LabBuilder) listens for this message and updates its state accordingly.
+        const handleMessage = (event) => {
+            if (event?.data.type!=='SET_ASSIGNMENT') return;
+            //when printing out event.data.AsssignmentId, it can be undefined due to hot reloading
+            console.log('here is the event data-->',event.data.type);
+            if (event.data.type === 'SET_ASSIGNMENT' && event.data.assignmentId) {
+                setAssignmentId(event.data.assignmentId);
+                setId(event.data.labId); //not sure if I need to send the lab data
+                loadLab(event.data.assignmentId);
+            }
+        };
+        window.addEventListener('message', handleMessage);
+        // Cleanup on unmount
+        return () => {
+            window.removeEventListener('message', handleMessage);
+        };
+    }, [setAssignmentId]);
     
     const allQuestions = [
         //filter questions without subquestions
@@ -24,6 +52,20 @@ function LabPreview({ blocks, title }) {
         // console.log(result); // [1, 2, 3, 4]
     ];
 
+    const loadLab = async(id=assignmentId)=>{
+         try {
+            const response = await axios.get(`${process.env.REACT_APP_SERVER_HOST}/lab/load-lab`, {
+                params: { assignmentId: id, title }
+            });
+            setBlocks(response.data.blocks);
+            setTitle(response.data.title);
+            setId(response.data.id);
+        } catch (err) {
+            console.error('Lab did not load from labController successfully', err.message);
+        }
+    };
+    
+
     useEffect(() => { // console.log() happens faster than fetchSession() use this to track values
         if (sessionLoaded) {
             console.log('State updated:', {
@@ -34,16 +76,6 @@ function LabPreview({ blocks, title }) {
         }
     }, [responses, finalResults, gradedResults, sessionLoaded]);
 
-    //LOAD LAB
-    useEffect(()=>{
-        const fetchLab  = async()=>{
-            try{
-                const response = await axios.get(`${process.env.REACT_APP_SERVER_HOST}/lab/load-lab/${title}`);
-            }catch(err){
-
-            }
-        }
-    })
 
     //LOAD SESSION
     useEffect(() => { //on  mount, load json 
