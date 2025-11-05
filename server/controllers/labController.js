@@ -7,7 +7,6 @@ const prisma = new PrismaClient();
 const loadLab = async(req,res)=>{
     try{
         const {assignmentId, title} = req.query; 
-        console.log('here are the params',assignmentId, title);
         let lab = await prisma.lab.findUnique({
             where: { assignmentId:Number(assignmentId) },
         });

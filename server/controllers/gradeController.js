@@ -8,11 +8,10 @@ const prisma = new PrismaClient();
 const calculateScore = async (req,res) =>{
     console.log('--------calculating score-----------');
     console.time('calculateScore');
-    const {gradedResults, title} = req.body;
+    const {gradedResults, labId, userId} = req.body;
     //console.log(Array.isArray(gradedResults));
-    if(!gradedResults || !title) return res.status(400).json({error:'gradedResults or labTitle is missing'});
+    if(!gradedResults) return res.status(400).json({error:'gradedResults is missing'});
     
-    const studentId = '1234';
     let maxPoints = Object.keys(gradedResults).length;
     let totalPoints = 0;
 
@@ -32,7 +31,7 @@ const calculateScore = async (req,res) =>{
     try {
         console.time('prismaUpdate');
         const updatedSession = await prisma.session.update({
-            where: {labTitle_studentId: {labTitle:title, studentId}},
+            where: {labId_userId: {labId, userId}},
             data: {finalScore}
         });
         console.timeEnd('prismaUpdate');

@@ -17,9 +17,10 @@ datasource db {
 
 model Session {
   id            String   @id @default(uuid())
-  labId         Int?
-  lab           Lab?      @relation(fields: [labId], references: [id])
-  labTitle      String
+  labId         Int
+  lab           Lab      @relation(fields: [labId], references: [id])
+  labTitle      String   // optional: keep for convenience/copy of title
+
   username      String
   userId        Int
   responses     Json
@@ -27,7 +28,7 @@ model Session {
   finalScore    Json
   lastModified  DateTime @updatedAt
   createdAt     DateTime @default(now())
-  @@unique([labTitle, userId]) 
+  @@unique([labId, userId])
 }
 
 model Lab {

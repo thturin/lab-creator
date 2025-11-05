@@ -5,7 +5,7 @@ const {loadSession, saveSession, getSessions} = require('../controllers/sessionC
 
 //ROOT localhost:4000/api/session
 router.post('/save-session', saveSession);
-router.get('/load-session/:title',loadSession);
+router.get('/load-session/:labId',loadSession);
 router.get('/get-sessions',getSessions);
 
 
