@@ -57,11 +57,6 @@ const loadSession = async (req, res) => {
     const numLabId = Number(labId);
     const numUserId = Number(userId);
     try {
-        // const lab = await prisma.lab.findUnique({
-        //     where:{id:numLabId}
-        // });
-        // if(!lab) return res.status(404).json({error:'Lab not found'});
-
         let session = await prisma.session.findUnique({
             where: { labId_userId: { labId: numLabId, userId: numUserId } }
         });
