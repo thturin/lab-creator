@@ -1,8 +1,22 @@
-const axios = require('axios');
 require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
+
+const deleteLab = async (req,res) =>{
+    const {labId} = req.params;
+    if (!labId) return res.status(400).json({ error: 'missing assignment Id' });
+
+    try { //lab.delete will throw an error if no lab exists but deleteMany will not
+        await prisma.lab.deleteMany({
+            where: { id: Number(labId) }
+        });
+        res.json({ message: 'Lab deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting lab:', err);
+        res.status(500).json({ error: 'Failed to delete lab' });
+    }
+}
 
 const loadLab = async(req,res)=>{
     try{
@@ -68,4 +82,4 @@ const upsertLab = async(req,res)=>{
 }
 
 
-module.exports = { upsertLab, loadLab, getLabs};
+module.exports = { upsertLab, loadLab, getLabs, deleteLab};
