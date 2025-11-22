@@ -1,10 +1,11 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-
+const path = require('path');
 const gradeRoutes = require("./routes/gradeRoutes");
 const sessionRoutes = require("./routes/sessionRoutes");
 const labRoutes = require("./routes/labRoutes.js");
+const uploadRoutes = require('./routes/uploadRoutes.js');
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
@@ -42,3 +43,8 @@ app.listen(PORT, ()=>{
 app.use('/api/grade',gradeRoutes);
 app.use('/api/session',sessionRoutes);
 app.use('/api/lab',labRoutes);
+app.use('/api/uploads',uploadRoutes);
+//static file serving (separate from API)
+//endpoint below is where we will access the image
+//in the uploads folder in repository 
+app.use('/images', express.static(path.join(__dirname,'uploads')));

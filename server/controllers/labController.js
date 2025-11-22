@@ -1,39 +1,9 @@
 require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
+const {processBlockImages} = require('./uploadController');
 
 const prisma = new PrismaClient();
 
-
-const processImageURLString = (str) => {
-    const base64Pattern = /src="data:image\/png;base64,[^"]+"/g;
-    //let shortened='';
-    while (str.includes('src="data:image/png;base64,')) {
-        str = str.replace(base64Pattern, 'src="[BASE64_IMAGE_REMOVED]"');
-
-    }
-    return str;
-}
-
-const shortenImageUrl = (blocks) => {
-    for (let i = 0; i < blocks.length; i++) {
-        const block = blocks[i];
-        if (block.blockType === 'material') {
-            block['content'] = processImageURLString(block['content']);
-            console.log(block['content']);
-        } else if (block.blockType === 'question') {
-            block['prompt'] = processImageURLString(block['prompt']);
-            block['explanation'] = processImageURLString(block['explanation']);
-            if (block.subQuestions && block.subQuestions.length > 0) {
-                for (let j = 0 ; j<block.subQuestions.length; j++) {
-                    const sq = block.subQuestions[j];
-                    sq['prompt'] = processImageURLString(sq['prompt']);
-                    sq['explanation'] = processImageURLString(sq['explanation']);
-                }
-            }
-        }
-    }
-    return blocks;
-};
 
 const deleteLab = async (req, res) => {
     const { labId } = req.params;
@@ -95,12 +65,12 @@ const getLab = async (req, res) => {
         });
         if (!lab) return res.status(404).json({ error: 'lab not found' });
 
-        let simplifiedLab = lab;
-        simplifiedLab = {
-            ...simplifiedLab,
-            blocks:shortenImageUrl(simplifiedLab.blocks)
-        };
-        return res.json(simplifiedLab);
+        // let simplifiedLab = lab;
+        // simplifiedLab = {
+        //     ...simplifiedLab,
+        //     blocks:shortenImageUrl(simplifiedLab.blocks)
+        // };
+        return res.json(lab);
 
     } catch (err) {
         console.error('Error in labController getLab()', err.message);
@@ -114,15 +84,17 @@ const upsertLab = async (req, res) => {
     try {
         const { title, blocks, assignmentId } = req.body;
 
+        const updatedBlocks = processBlockImages(blocks);
+
         const lab = await prisma.lab.upsert({
             where: { assignmentId: Number(assignmentId) },
             update: {
                 title,
-                blocks
+                blocks:updatedBlocks
             },
             create: {
                 title,
-                blocks,
+                blocks:updatedBlocks,
                 assignmentId: Number(assignmentId),
                 sessions: { create: [] }
             }
