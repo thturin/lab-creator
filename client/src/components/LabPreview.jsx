@@ -115,8 +115,7 @@ function LabPreview({ blocks, setBlocks, title, setTitle }) {
             session.labInfo.title = title;
             if (responses) session.responses = responses;
             session.gradedResults = gradedResults;
-
-            // username and studentID are currently defaulted
+            
             //do not need await because we are not receving json
             axios.post(`${process.env.REACT_APP_SERVER_HOST}/session/save-session`, session)
                 .catch(err => {
