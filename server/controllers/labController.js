@@ -81,21 +81,22 @@ const getLab = async (req, res) => {
 const upsertLab = async (req, res) => {
     //THIS ASSUMES 1:1 LAB: ASSIGNMENT. we avoid relying on database-genrasted IDs for upsert logic
     //one lab per assignment
-    try {
-        const { title, blocks, assignmentId } = req.body;
 
-        const updatedBlocks = processBlockImages(blocks);
+    //currently searching for lab to upsert with assignmentId,
+    //needs to be changed in the future 
+    try {
+        const { title, blocks, assignmentId, aiPrompt } = req.body;
+        let data={};
+        if(title!== undefined) data.title=title;
+        if(blocks!==undefined) data.blocks=processBlockImages(blocks);
+        if(aiPrompt!==undefined) data.aiPrompt = aiPrompt;
+        data.assignmentId = Number(assignmentId);
 
         const lab = await prisma.lab.upsert({
             where: { assignmentId: Number(assignmentId) },
-            update: {
-                title,
-                blocks:updatedBlocks
-            },
+            update: data,
             create: {
-                title,
-                blocks:updatedBlocks,
-                assignmentId: Number(assignmentId),
+                ...data,
                 sessions: { create: [] }
             }
         });
@@ -106,6 +107,5 @@ const upsertLab = async (req, res) => {
         res.status(500).json({ error: 'Could not create or save lab' });
     }
 }
-
 
 module.exports = { upsertLab, loadLab, getLabs, deleteLab, getLab };

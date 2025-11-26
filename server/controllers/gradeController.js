@@ -97,7 +97,13 @@ const gradeQuestion = async (req, res) => {
 };
 
 const gradeQuestionDeepSeek = async (req,res)=>{
-    const {userAnswer, answerKey, question, questionType} = req.body;
+    const {userAnswer, answerKey, question, questionType, AIPrompt} = req.body;
+    if(!AIPrompt){
+        AIPrompt=`The response will be be in html but ignore all html artifacts and just analyze the text.
+            Is the student's answer correct? Give a score from 0 to 1 and a brief feedback.
+            If the response is empty, just respond with 'response is empty'
+            Do not take off points for grammar mistakes and misspelling.`;
+    }
     console.log('req.body',req.body);
     if(!userAnswer || !answerKey){
         //might be a question with subquestions 
@@ -111,11 +117,7 @@ const gradeQuestionDeepSeek = async (req,res)=>{
             Student Answer: ${userAnswer}
             Question: ${question}
             Question Type: ${questionType}
-            The response will be be in html but ignore all html artifacts and just analyze the text.
-            Is the student's answer correct? Give a score from 0 to 1 and a brief feedback.
-            If the response is empty, just respond with 'response is empty'
-            Do not take off points for grammar mistakes and misspelling.
-            Respond in JSON: {"score": number, "feedback": string}`;
+            AI Prompt: ${AIPrompt}. Respond in JSON: {"score": number, "feedback": string}`;
 
         const openai = new OpenAI({
                 baseURL: 'https://api.deepseek.com',

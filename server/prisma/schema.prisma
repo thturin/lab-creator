@@ -38,5 +38,6 @@ model Lab {
   createdAt    DateTime   @default(now())
   assignmentId Int        @unique
   sessions     Session[]
+  aiPrompt     String?
 }
 
