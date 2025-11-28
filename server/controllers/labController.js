@@ -78,20 +78,22 @@ const getLab = async (req, res) => {
     }
 };
 
-const upsertLab = async (req, res) => {
+
+const upsertLab = async (req, res) => { //this is used on create assignment
     //THIS ASSUMES 1:1 LAB: ASSIGNMENT. we avoid relying on database-genrasted IDs for upsert logic
     //one lab per assignment
 
     //currently searching for lab to upsert with assignmentId,
     //needs to be changed in the future 
     try {
-        const { title, blocks, assignmentId, aiPrompt } = req.body;
+        const { title, blocks, assignmentId} = req.body;
+        if (!assignmentId) return;
+        
         let data={};
         if(title!== undefined) data.title=title;
         if(blocks!==undefined) data.blocks=processBlockImages(blocks);
-        if(aiPrompt!==undefined) data.aiPrompt = aiPrompt;
         data.assignmentId = Number(assignmentId);
-
+  
         const lab = await prisma.lab.upsert({
             where: { assignmentId: Number(assignmentId) },
             update: data,
@@ -108,4 +110,20 @@ const upsertLab = async (req, res) => {
     }
 }
 
-module.exports = { upsertLab, loadLab, getLabs, deleteLab, getLab };
+const updateLabPrompt = async (req, res) => {
+    const { assignmentId, aiPrompt } = req.body;
+    if (!assignmentId) return res.status(400).json({ error: 'assignmentId is required' });
+
+    try {
+        const lab = await prisma.lab.update({
+            where: { assignmentId: Number(assignmentId) },
+            data: { aiPrompt }
+        });
+        return res.json(lab);
+    } catch (err) {
+        return res.status(404).json({ error: 'Lab not found' });
+        
+    }
+};
+
+module.exports = {updateLabPrompt, upsertLab, loadLab, getLabs, deleteLab, getLab, updateLabPrompt };

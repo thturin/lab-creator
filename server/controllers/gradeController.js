@@ -98,13 +98,14 @@ const gradeQuestion = async (req, res) => {
 
 const gradeQuestionDeepSeek = async (req,res)=>{
     const {userAnswer, answerKey, question, questionType, AIPrompt} = req.body;
+    let newAIPrompt=AIPrompt
     if(!AIPrompt){
-        AIPrompt=`The response will be be in html but ignore all html artifacts and just analyze the text.
+        newAIPrompt=`The response will be be in html but ignore all html artifacts and just analyze the text.
             Is the student's answer correct? Give a score from 0 to 1 and a brief feedback.
             If the response is empty, just respond with 'response is empty'
             Do not take off points for grammar mistakes and misspelling.`;
     }
-    console.log('req.body',req.body);
+
     if(!userAnswer || !answerKey){
         //might be a question with subquestions 
         return res.status(400).json({error:'No user response or answer key'});
@@ -117,8 +118,8 @@ const gradeQuestionDeepSeek = async (req,res)=>{
             Student Answer: ${userAnswer}
             Question: ${question}
             Question Type: ${questionType}
-            AI Prompt: ${AIPrompt}. Respond in JSON: {"score": number, "feedback": string}`;
-
+            AI Prompt: ${newAIPrompt}. Give a score from 0 to 1 and a brief feedback. 
+            Respond in JSON: {"score": number, "feedback": string}`;
         const openai = new OpenAI({
                 baseURL: 'https://api.deepseek.com',
                 apiKey: process.env.DEEPSEEK_API_KEY,
@@ -139,7 +140,7 @@ const gradeQuestionDeepSeek = async (req,res)=>{
         }
         return res.json(result);
     }catch(err){
-        console.log('Error in accessing deep seek api. Request failed.',err);
+        console.log('Error in accessing deep seek api. Request failed.',err.message);
         return res.status(400).json({error:'cannot access deep seek api'});
     }
 
