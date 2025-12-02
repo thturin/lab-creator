@@ -89,9 +89,9 @@ const loadSession = async (req, res) => {
                     finalScore: {},
                 }
             });
-            console.log('Created New Session->',JSON.stringify(session));
+            //console.log('Created New Session->',JSON.stringify(session));
         }else{
-            console.log('session already exists->',JSON.stringify(session));
+           // console.log('session already exists->',JSON.stringify(session));
         }
         //console.log(JSON.stringify(session));
         return res.json({ session });
