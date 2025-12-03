@@ -46,10 +46,14 @@ const calculateScore = async (req, res) => {
 
 const gradeQuestion = async (req, res) => {
     const { userAnswer, answerKey, question, questionType } = req.body;
-    //console.log(userAnswer,answerKey,question);
-    if (!userAnswer || !answerKey) {
-        //might be a question with subquestions 
-        return res.status(400).json({ error: 'No user response or answer key' });
+    const hasUserAnswer = Boolean(userAnswer && userAnswer.trim().length > 0);
+    const hasAnswerKey = Boolean(answerKey && answerKey.trim().length > 0);
+
+    if (!hasUserAnswer) {
+        return res.json({ score: 0, feedback: 'No response submitted' });
+    }
+    if (!hasAnswerKey) {
+        return res.json({ score: 1, feedback: 'Answer key missing; awarding full credit' });
     }
 
     try {
@@ -112,7 +116,15 @@ const buildPrompt = ({ userAnswer, answerKey, question, questionType, AIPrompt }
 };
 
 const gradeWithDeepSeek = async ({ userAnswer, answerKey, question, questionType, AIPrompt }) => {
-    if (!userAnswer || !answerKey) throw new Error('No user response or answer key');
+    const hasUserAnswer = Boolean(userAnswer && userAnswer.trim().length > 0);
+    const hasAnswerKey = Boolean(answerKey && answerKey.trim().length > 0);
+
+    if (!hasUserAnswer) {
+        return { score: 0, feedback: 'No response submitted' };
+    }
+    if (!hasAnswerKey) {
+        return { score: 1, feedback: 'Answer key missing; awarding full credit' };
+    }
 
     const openai = new OpenAI({
         baseURL: 'https://api.deepseek.com',
@@ -135,9 +147,6 @@ const gradeWithDeepSeek = async ({ userAnswer, answerKey, question, questionType
 };
 
 const gradeQuestionDeepSeek = async (req, res) => {
-    const { userAnswer, answerKey } = req.body;
-    if (!userAnswer || !answerKey) return res.status(400).json({ error: 'No user response or answer key' });
-
     try {
         const result = await gradeWithDeepSeek(req.body); //req.body = userAnswer, answerKey, question, questionType, AIPrompt
         return res.json(result);
