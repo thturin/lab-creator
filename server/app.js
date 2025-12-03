@@ -18,8 +18,8 @@ app.use(cors({
     'http://0.0.0.0:13001',
     'http://portal-client:3000',
     'http://localhost:13000',
-    'http://0.0.0.0:13000'
-
+    'http://0.0.0.0:13000',
+    'https://turninterminal.netlify.app'
   ],
   credentials:true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
