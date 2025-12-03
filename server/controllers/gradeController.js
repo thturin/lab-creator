@@ -11,7 +11,7 @@ const calculateScore = async (req, res) => {
     const { gradedResults, labId, userId } = req.body;
     //console.log(Array.isArray(gradedResults));
     if (!gradedResults) return res.status(400).json({ error: 'gradedResults is missing' });
-
+    console.log('HERE ARE THE GRADED RESULTS ->>>>',gradedResults);
     let maxPoints = Object.keys(gradedResults).length;
     let totalPoints = 0;
 
