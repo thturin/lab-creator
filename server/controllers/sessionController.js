@@ -70,11 +70,14 @@ const getSessions = async (req, res) => {
 const loadSession = async (req, res) => {
     const { labId } = req.params;
     const { userId, username, title } = req.query;
+    console.log('in loadSession',userId,username,title);
 
     try {
+        console.log('hell oworld');
         let session = await prisma.session.findUnique({
             where: { labId_userId: { labId: Number(labId), userId: Number(userId) } }
         });
+    
         if (!session) {
             console.log('No session found, creating new one');
             session = await prisma.session.create({
@@ -89,7 +92,7 @@ const loadSession = async (req, res) => {
                     finalScore: {},
                 }
             });
-            //console.log('Created New Session->',JSON.stringify(session));
+
         }else{
            // console.log('session already exists->',JSON.stringify(session));
         }

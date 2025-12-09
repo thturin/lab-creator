@@ -40,7 +40,7 @@ const processBlockImages = (blocks) => {
         const block = blocks[i];
         if (block.blockType === 'material') {
             block['content'] = extractAndSaveImages(block['content']);
-            console.log(block['content']);
+           // console.log(block['content']);
         } else if (block.blockType === 'question') {
             block['prompt'] = extractAndSaveImages(block['prompt']);
             block['explanation'] = extractAndSaveImages(block['explanation']);

@@ -64,12 +64,6 @@ const getLab = async (req, res) => {
             }
         });
         if (!lab) return res.status(404).json({ error: 'lab not found' });
-
-        // let simplifiedLab = lab;
-        // simplifiedLab = {
-        //     ...simplifiedLab,
-        //     blocks:shortenImageUrl(simplifiedLab.blocks)
-        // };
         return res.json(lab);
 
     } catch (err) {
@@ -91,6 +85,8 @@ const upsertLab = async (req, res) => { //this is used on create assignment
         
         let data={};
         if(title!== undefined) data.title=title;
+
+        //we must process any image urls -> image in images folder with the upload controller
         if(blocks!==undefined) data.blocks=processBlockImages(blocks);
         data.assignmentId = Number(assignmentId);
   
@@ -102,7 +98,7 @@ const upsertLab = async (req, res) => { //this is used on create assignment
                 sessions: { create: [] }
             }
         });
-        console.log('lab created or saved: ', lab);
+        //console.log('lab created or saved: ', lab);
         return res.json(lab); //return the lab
     } catch (err) {
         console.error('Error in labController upsertLab()', err);

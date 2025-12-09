@@ -101,28 +101,30 @@ const gradeQuestion = async (req, res) => {
 };
 
 const buildPrompt = ({ userAnswer, answerKey, question, questionType, AIPrompt }) => {
-    const basePrompt = AIPrompt || `The response will be be in html but ignore all html artifacts and just analyze the text.
-            Is the student's answer correct? Give a score from 0 to 1 and a brief feedback.
-            If the response is empty, just respond with 'response is empty'
-            Do not take off points for grammar mistakes and misspelling.`;
+    const basePrompt = AIPrompt || ``;
 
     return `compare the student's answer to the answer key. 
             Answer Key: ${answerKey}
             Student Answer: ${userAnswer}
             Question: ${question}
             Question Type: ${questionType}
-            AI Prompt: ${basePrompt}. The response will be in HTML but ignore all html artifacts. Just analyze the text. Give a score from 0 to 1 and a brief feedback. 
-            Respond in JSON: {"score": number, "feedback": string}`;
+            AI Prompt: ${basePrompt}.
+            
+            The response will be be in html but ignore all html artifacts and just analyze the text.
+            Is the student's answer correct? Give a score from 0 to 1 and a brief feedback.
+            If the response is empty, just respond with 'response is empty'
+            Do not take off points for grammar mistakes and misspelling. Be very leniant with scoring but give descriptive feedback.
+            Respond in JSON with EXACTLY: {"score": number, "feedback": string}`;
 };
 
 const gradeWithDeepSeek = async ({ userAnswer, answerKey, question, questionType, AIPrompt }) => {
     const hasUserAnswer = Boolean(userAnswer && userAnswer.trim().length > 0);
     const hasAnswerKey = Boolean(answerKey && answerKey.trim().length > 0);
 
-    if (!hasUserAnswer) {
+    if (!hasUserAnswer) { //if there is no asnwer, 0 
         return { score: 0, feedback: 'No response submitted' };
     }
-    if (!hasAnswerKey) {
+    if (!hasAnswerKey) {//if there is no answer key 
         return { score: 1, feedback: 'Answer key missing; awarding full credit' };
     }
 
