@@ -1,8 +1,8 @@
 const axios = require('axios');
 require('dotenv').config();
-const OpenAI = require('openai');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+
 
 
 const calculateScore = async (req, res) => {
@@ -11,7 +11,7 @@ const calculateScore = async (req, res) => {
     const { gradedResults, labId, userId } = req.body;
     //console.log(Array.isArray(gradedResults));
     if (!gradedResults) return res.status(400).json({ error: 'gradedResults is missing' });
-    console.log('HERE ARE THE GRADED RESULTS ->>>>',gradedResults);
+    // console.log('HERE ARE THE GRADED RESULTS ->>>>',gradedResults);
     let maxPoints = Object.keys(gradedResults).length;
     let totalPoints = 0;
 
@@ -43,61 +43,22 @@ const calculateScore = async (req, res) => {
         return res.status(500).json({ error: 'error calculating score' });
     }
 }
-
-const gradeQuestion = async (req, res) => {
-    const { userAnswer, answerKey, question, questionType } = req.body;
-    const hasUserAnswer = Boolean(userAnswer && userAnswer.trim().length > 0);
-    const hasAnswerKey = Boolean(answerKey && answerKey.trim().length > 0);
-
-    if (!hasUserAnswer) {
-        return res.json({ score: 0, feedback: 'No response submitted' });
-    }
-    if (!hasAnswerKey) {
-        return res.json({ score: 1, feedback: 'Answer key missing; awarding full credit' });
-    }
-
+const parseScoreFeedback = (raw) => {
     try {
-        const prompt = `compare the student's answer to the answer key. 
-        Answer Key: ${answerKey}
-        Student Answer: ${userAnswer}
-        Question: ${question}
-        Question Type: ${questionType}
-        Is the student's answer correct? Give a score from 0, 0.5 or 1 and a brief feedback.
-        The students are learning so it's best to give good feedback and be leniant on scoring.
-        Do not take deduct points for grammar mistakes and misspelling.
-        If their response is similar to the answer key, do not take points off. 
-        Responses will be wrapped in React Quill. 
-        Respond in JSON: {"score": number, "feedback": string}`;
-        //console.log(prompt);
 
-        const response = await axios.post(
-            "https://api.openai.com/v1/chat/completions",
-            {
-                model: "gpt-3.5-turbo",
-                messages: [{ role: "user", content: prompt }],
-                max_tokens: 100,
-                temperature: 0.2
-            },
-            {
-                headers: {
-                    "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-                    "Content-Type": "application/json"
-                }
-            }
-        );
-        //HANDLE THE GPT message
-        const gptOutput = response.data.choices[0].message.content;
-        let result;
-        try {
-            result = JSON.parse(gptOutput);
-        } catch {
-            result = { score: null, feedback: message };
+        //check deepseek response if it is actuall a string {score: number, feedback:string}
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw; //parse it into json if not already
+        const score = Number(parsed?.score);
+        const feedback = typeof parsed?.feedback === 'string' ? parsed.feedback.trim().slice(0,400) : '';
+
+        if (Number.isFinite(score) && score >= 0 && score <= 1 && feedback.length > 0) {
+            return { score, feedback };
         }
-        return res.json(result);
     } catch (err) {
-        console.error(`Error in gradeQuestion() [gradeController]`, err.response?.data || err.message);
-        return res.status(500).json({ error: 'Failed to grade answer' });
+        console.warn('DeepSeek parse error', err.message);
     }
+
+    return { score: 0, feedback: 'Model response malformed or empty' };
 };
 
 const buildPrompt = ({ userAnswer, answerKey, question, questionType, AIPrompt }) => {
@@ -111,46 +72,65 @@ const buildPrompt = ({ userAnswer, answerKey, question, questionType, AIPrompt }
             AI Prompt: ${basePrompt}.
             
             The response will be be in html but ignore all html artifacts and just analyze the text.
-            Is the student's answer correct? Give a score from 0 to 1 and a brief feedback.
+            Is the student's answer correct, give a score from 0 to 1 and a brief feedback.
             If the response is empty, just respond with 'response is empty'
-            Do not take off points for grammar mistakes and misspelling. Be very leniant with scoring but give descriptive feedback.
-            Respond in JSON with EXACTLY: {"score": number, "feedback": string}`;
+            Do not take off points for grammar mistakes and misspelling. 
+            Be very leniant with scoring but give descriptive feedback.
+            Feedback should not be too long (<= 400 characters).
+            Respond in JSON ONLY, with EXACTLY: {"score": number between 0 and 1, "feedback": string}. Do not include code fences, explanations, or any other text.`;
 };
 
-const gradeWithDeepSeek = async ({ userAnswer, answerKey, question, questionType, AIPrompt }) => {
-    const hasUserAnswer = Boolean(userAnswer && userAnswer.trim().length > 0);
-    const hasAnswerKey = Boolean(answerKey && answerKey.trim().length > 0);
-
-    if (!hasUserAnswer) { //if there is no asnwer, 0 
-        return { score: 0, feedback: 'No response submitted' };
+// we need this function separate becauyse before we were trying to call 
+//gradeQuestionDeepSeek inside regradeSession which means we were sending a plain object with 
+//to the function that wanted (req,ress)-> this can cause an issue.
+//now we call this function direectly in regradeSession
+//we think this solution will fix the problem with production timing for dry regrade
+const gradeWithDeepSeek = async ({ userAnswer, answerKey, question, questionType, AIPrompt, timeoutMs = 20000 }) => {
+    if (!process.env.DEEPSEEK_API_KEY) {
+        throw new Error('DEEPSEEK_API_KEY is not configured');
     }
-    if (!hasAnswerKey) {//if there is no answer key 
-        return { score: 1, feedback: 'Answer key missing; awarding full credit' };
-    }
 
-    const openai = new OpenAI({
-        baseURL: 'https://api.deepseek.com',
-        apiKey: process.env.DEEPSEEK_API_KEY,
-    });
+    const prompt = buildPrompt({ userAnswer, answerKey, question, questionType, AIPrompt });
 
-    const completion = await openai.chat.completions.create({
-        messages: [{ role: "system", content: buildPrompt({ userAnswer, answerKey, question, questionType, AIPrompt }) }],
-        model: "deepseek-chat",
-    });
+    const response = await axios.post(
+        'https://api.deepseek.com/chat/completions',
+        {
+            model: 'deepseek-chat',
+            messages: [
+                { role: 'system', content: 'You are a grading assistant that responds ONLY with a single JSON object.' },
+                { role: 'user', content: prompt }
+            ],
+            temperature: 0.2,
+            max_tokens: 200
+        },
+        {
+            headers: {
+                Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            timeout: timeoutMs
+        }
+    );
 
-    let result = completion.choices[0].message.content;
-    try {
-        result = JSON.parse(result);
-    } catch (err) {
-        console.log('error parsing JSON in deepseek handler', err);
-        result = { score: 0, feedback: "error parsing json" };
-    }
-    return result;
+    const raw = response.data?.choices?.[0]?.message?.content || '';
+    return parseScoreFeedback(raw);
 };
+
+
 
 const gradeQuestionDeepSeek = async (req, res) => {
+    const { userAnswer, answerKey, question, questionType, AIPrompt } = req.body;
+    const hasUserAnswer = Boolean(userAnswer && userAnswer.trim().length > 0);
+    const hasAnswerKey = Boolean(answerKey && answerKey.trim().length > 0);
+    if (!hasUserAnswer) {
+        return res.status(400).json({ score: 0, feedback: 'No response submitted' });
+    }
+    if (!hasAnswerKey) {
+        return res.status(400).json({ score: 1, feedback: 'Answer key missing; awarding full credit' });
+    }
+
     try {
-        const result = await gradeWithDeepSeek(req.body); //req.body = userAnswer, answerKey, question, questionType, AIPrompt
+        const result = await gradeWithDeepSeek({ userAnswer, answerKey, question, questionType, AIPrompt });
         return res.json(result);
     } catch (err) {
         console.log('Error in accessing deep seek api. Request failed.', err.message);
@@ -159,6 +139,7 @@ const gradeQuestionDeepSeek = async (req, res) => {
 };
 
 
+//this is called asynchronously with redis
 const regradeSession = async (req, res) => {
     const { labId, userId, responses, questionLookup, dryRun = true, aiPrompt } = req.body;
     if (!labId || !userId || !responses || !questionLookup) {
@@ -169,7 +150,7 @@ const regradeSession = async (req, res) => {
         const regradedResults = {};
 
         for (const [questionId, userAnswer] of Object.entries(responses)) {
-            const details = questionLookup[questionId];//prompt key type
+            const details = questionLookup[questionId];
             if (!details) {
                 console.warn(`question metadata missing for id ${questionId} in regradeSession`);
                 continue;
@@ -190,17 +171,6 @@ const regradeSession = async (req, res) => {
                 };
             } catch (err) {
                 console.error(`Error grading question ${questionId} during regrade`, err.message);
-            }
-        }
-
-        //if a response was missing from student, there will be no questionId key. It will 
-        //not be in the regradedResults. give an automatic 0 and no response submitted.
-        for (const questionId of Object.keys(questionLookup)) {
-            if (!regradedResults[questionId]) {
-                regradedResults[questionId] = {
-                    score: 0,
-                    feedback: 'No response submitted'
-                };
             }
         }
 
@@ -237,4 +207,41 @@ const regradeSession = async (req, res) => {
     }
 };
 
-module.exports = { regradeSession, gradeQuestion, gradeQuestionDeepSeek, calculateScore };
+
+/// USELESS WITHOUT BETTER HARDWARE 
+const gradeQuestionOllama = async (req, res) => {
+    // const ollamaHost = process.env.OLLAMA_HOST;
+    // try {
+    //     const { model = 'deepseek-coder:6.7b', temperature = 0.2, userAnswer, answerKey, question, questionType, AIPrompt } = req.body;
+    //     const hasUserAnswer = Boolean(userAnswer && userAnswer.trim().length > 0);
+    //     const hasAnswerKey = Boolean(answerKey && answerKey.trim().length > 0);
+
+    //     if (!hasUserAnswer) {
+    //         return res.status(400).json({ score: 0, feedback: 'No response submitted' });
+    //     }
+    //     if (!hasAnswerKey) {
+    //         return res.status(400).json({ score: 1, feedback: 'Answer key missing; awarding full credit' });
+    //     }
+    //     if (!model) {
+    //         return res.status(400).json({ error: 'model missing' });
+    //     }
+
+    //     const response = await axios.post(`${ollamaHost}/api/generate`, {
+    //         model,
+    //         prompt: buildPrompt({ userAnswer, answerKey, question, questionType, AIPrompt }),
+    //         temperature
+    //     });
+
+    //     // Only return the payload, not the full axios response (which is circular)
+    //     return res.json(response.data);
+
+    // } catch (err) {
+    //     console.error('Ollama request failed', err.message);
+    //     return res.status(502).json({ error: 'Failed to reach Ollama', detail: err.message });
+    // }
+};
+
+
+
+
+module.exports = { regradeSession, gradeQuestionDeepSeek, calculateScore,gradeQuestionOllama };

@@ -13,6 +13,11 @@ RUN npx prisma generate --schema=./prisma/schema.prisma
 
 COPY . .
 
+# RUN mkdir -p /app/uploads && chown node:node /app/uploads
+# VOLUME /app/uploads
+
 EXPOSE 4000
 
-CMD ["npx","nodemon", "app.js"]
+# CMD ["npx","nodemon", "app.js"]
+# Production run: plain node (nodemon is provided via docker-compose.override.yml for local dev)
+CMD ["node", "app.js"]

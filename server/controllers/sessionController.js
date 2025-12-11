@@ -70,10 +70,8 @@ const getSessions = async (req, res) => {
 const loadSession = async (req, res) => {
     const { labId } = req.params;
     const { userId, username, title } = req.query;
-    console.log('in loadSession',userId,username,title);
 
     try {
-        console.log('hell oworld');
         let session = await prisma.session.findUnique({
             where: { labId_userId: { labId: Number(labId), userId: Number(userId) } }
         });
