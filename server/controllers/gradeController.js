@@ -70,14 +70,15 @@ const buildPrompt = ({ userAnswer, answerKey, question, questionType, AIPrompt }
             Question: ${question}
             Question Type: ${questionType}
             AI Prompt: ${basePrompt}.
-            
+            You are an empathetic grading assistant that responds only with a 
+            JSON object with EXACTLY { "score": number, "feedback": string }. 
+            Compare the student answer to the answer key, look for misconceptions, 
+            and explain how to correct them. Mention the specific concept they misunderstood, 
+            point toward the right reasoning, and suggest one next step (e.g., revisit a definition or example).
+            Be kind, concise, and avoid grammar penalties. Feedback should be ≤400 characters.
             The response will be be in html but ignore all html artifacts and just analyze the text.
             Is the student's answer correct, give a score from 0 to 1 and a brief feedback.
-            If the response is empty, just respond with 'response is empty'
-            Do not take off points for grammar mistakes and misspelling. 
-            Be very leniant with scoring but give descriptive feedback.
-            Feedback should not be too long (<= 400 characters).
-            Respond in JSON ONLY, with EXACTLY: {"score": number between 0 and 1, "feedback": string}. Do not include code fences, explanations, or any other text.`;
+            If the response is empty, just respond with 'response is empty' `
 };
 
 // we need this function separate becauyse before we were trying to call 
@@ -100,6 +101,9 @@ const gradeWithDeepSeek = async ({ userAnswer, answerKey, question, questionType
                 { role: 'system', content: 'You are a grading assistant that responds ONLY with a single JSON object.' },
                 { role: 'user', content: prompt }
             ],
+            response_format: {
+                type: 'json_object'
+            },
             temperature: 0.2,
             max_tokens: 200
         },
